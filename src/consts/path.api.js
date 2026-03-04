@@ -10,5 +10,8 @@ export const API = {
   },
   ADMIN: {
     USERS: "/api/admin",
-  }
+  },
+  STUDENT: {
+    PROFILE: "/api/students/profile",
+  },
 };

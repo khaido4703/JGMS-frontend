@@ -2,7 +2,7 @@ import axios from "axios";
 import { toggleLoading } from "../app/loadingSlice";
 import { toast } from "react-toastify";
 import store from "../app/store";
-import { DOMAIN_ADMIN } from "../consts/const";
+import { DOMAIN_ADMIN, LOCAL_STORAGE } from "../consts/const";
 import { ROUTER_URL } from "../consts/router.const";
 
 export const axiosInstance = axios.create({
@@ -27,11 +27,21 @@ const requestInterceptor = (config) => {
 
 function getAccessToken() {
   try {
-    const raw = localStorage.getItem("account_admin");
-    if (raw) {
-      const obj = JSON.parse(raw);
+    // Check auth_user first (for Student/Lecturer)
+    const authUser = localStorage.getItem(LOCAL_STORAGE.AUTH_USER);
+    if (authUser) {
+      const obj = JSON.parse(authUser);
       return obj?.accessToken || obj?.access_token || null;
     }
+    
+    // Then check account_admin (for Admin)
+    const accountAdmin = localStorage.getItem(LOCAL_STORAGE.ACCOUNT_ADMIN);
+    if (accountAdmin) {
+      const obj = JSON.parse(accountAdmin);
+      return obj?.accessToken || obj?.access_token || null;
+    }
+    
+    // Fallback to plain token
     return localStorage.getItem("token");
   } catch {
     return null;
