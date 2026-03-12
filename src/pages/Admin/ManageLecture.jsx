@@ -1,11 +1,30 @@
 import "./Table.css";
 import Pagination from "../../components/Pagination";
-import { useState } from "react";
 import Modal from "../../components/coreUI/Modal";
+import { AdminManageLectureService } from "../../services/admin/adminLecturer.service";
+import { useEffect,useState } from "react";
 
 export default function ManageLectures() {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [lecturers, setLecturers] = useState([])
+  
+  useEffect(() => {
+    fetchLecturers();
+  }, []);
+
+  const fetchLecturers = async () => {
+    try {
+      setLoading(true);
+      const res = await AdminManageLectureService.getAllLecture();
+      setLecturers(res.data);
+    } catch (error) {
+      console.error("Error fetching lecturers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <div className="page-header">
@@ -21,19 +40,26 @@ export default function ManageLectures() {
               <th>ID</th>
               <th>LECTURER NAME</th>
               <th>EMAIL</th>
+              <th>PHONE</th>
               <th>GROUPS</th>
               <th>ACTION</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr>
-              <td>L01</td>
-              <td>Tuan Khai</td>
-              <td>khaidtse170569@fpt.edu.vn</td>
-              <td>3</td>
-              <td>coding</td>
-            </tr>
+            {lecturers.map((lec) => (
+              <tr key={lec.userId}>
+                <td>{lec.userId}</td>
+                <td>{lec.fullName}</td>
+                <td>{lec.email}</td>
+                <td>{lec.phone}</td>
+                <td>-</td>
+                <td>
+                  <button>Edit</button>
+                  <button>Delete</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
         <Modal
