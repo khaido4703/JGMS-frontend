@@ -11,6 +11,10 @@ import StudentMyGroup from "../pages/student/MyGroup";
 import StudentProfile from "../pages/student/Profile";
 import MyTasks from "../pages/student/MyTasks";
 import KanbanPage from "../pages/student/KanbanPage";
+import ProgressReports from "../pages/lecturer/ProgressReports";
+import LecturerDashboard from "../pages/lecturer/Dashboard";
+import GithubReport from "../pages/lecturer/GithubReport";
+import LecturerProfile from "../pages/lecturer/Profile"; 
 import LoginPage from "../pages/auth/Login";
 import RegisterPage from "../pages/auth/Register";
 import HomePage from "../pages/common/Home";
@@ -24,21 +28,6 @@ const AppRoutes = () =>
         { path: ROUTER_URL.COMMON.HOME, element: <HomePage /> },
         { path: ROUTER_URL.COMMON.LOGIN, element: <LoginPage /> },
         { path: ROUTER_URL.COMMON.REGISTER, element: <RegisterPage /> },
-      ],
-    },
-    {
-      element: (
-        <ProtectedRoute
-          allowedRoles={[ROLE.STUDENT, ROLE.ADMIN, ROLE.LECTURER]}
-        />
-      ),
-      children: [
-        {
-          element: <MainLayout />,
-          children: [
-            { path: ROUTER_URL.COMMON.PROFILE, element: <StudentProfile /> },
-          ],
-        },
       ],
     },
     {
@@ -62,14 +51,10 @@ const AppRoutes = () =>
           path: ROUTER_URL.LECTURER.DASHBOARD,
           element: <AdminLayout />,
           children: [
-            {
-              index: true,
-              element: (
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold">Lecturer Dashboard</h1>
-                </div>
-              ),
-            },
+            { index: true, element: <LecturerDashboard /> },
+            { path: "profile", element: <LecturerProfile /> },
+            { path: "reports", element: <ProgressReports /> },
+            { path: "github", element: <GithubReport /> }
           ],
         },
       ],
@@ -85,6 +70,7 @@ const AppRoutes = () =>
               index: true,
               element: <StudentDashboard />,
             },
+            { path: "profile", element: <StudentProfile /> },
             {
               path: "my-group",
               element: <StudentMyGroup />,

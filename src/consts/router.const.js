@@ -3,17 +3,22 @@ export const ROUTER_URL = {
     HOME: "/",
     LOGIN: "/login",
     REGISTER: "/register",
-    PROFILE: "/profile",
   },
   ADMIN: {
     DASHBOARD: "/admin",
+    MANAGE_GROUP: "/admin/groups",
+    MANAGE_LECTURE: "/admin/lectures",
   },
   LECTURER: {
     DASHBOARD: "/lecturer",
+    PROFILE: "/lecturer/profile",
+    REPORTS: "/lecturer/reports",
+    GITHUB: "/lecturer/github",
   },
   STUDENT: {
     DASHBOARD: "/student",
     KANBAN: "/student/kanban",
     MY_GROUP: "/student/my-group",
+    PROFILE: "/student/profile",
   },
 };
