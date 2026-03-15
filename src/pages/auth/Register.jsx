@@ -7,6 +7,7 @@ import { AuthService } from "../../services/auth.service";
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    role: "student",
     email: "",
     password: "",
     fullName: "",
@@ -14,10 +15,22 @@ const RegisterPage = () => {
     studentCode: "",
   });
   const [errors, setErrors] = useState({});
+  const isLecturer = form.role === "lecturer";
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      if (name === "role" && value === "lecturer") {
+        return { ...prev, role: value, studentCode: "" };
+      }
+
+      return { ...prev, [name]: value };
+    });
+
+    if (name === "role") {
+      setErrors((prev) => ({ ...prev, studentCode: "" }));
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -28,7 +41,17 @@ const RegisterPage = () => {
     setErrors({});
 
     try {
-      const response = await AuthService.register(form);
+      const payload = {
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        phone: form.phone,
+        ...(isLecturer ? {} : { studentCode: form.studentCode }),
+      };
+
+      const response = isLecturer
+        ? await AuthService.registerLecturer(payload)
+        : await AuthService.registerStudent(payload);
 
       if (response?.data) {
         toast.success("Registration successful! Please login.");
@@ -95,6 +118,31 @@ const RegisterPage = () => {
               </p>
             </div>
             <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Account type
+                </span>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                  <button
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${form.role === "student" ? "bg-white text-teal-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
+                    name="role"
+                    onClick={handleChange}
+                    type="button"
+                    value="student"
+                  >
+                    Student
+                  </button>
+                  <button
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${form.role === "lecturer" ? "bg-white text-teal-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
+                    name="role"
+                    onClick={handleChange}
+                    type="button"
+                    value="lecturer"
+                  >
+                    Lecturer
+                  </button>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label
                   className="text-sm font-medium text-slate-700"
@@ -179,34 +227,36 @@ const RegisterPage = () => {
                   <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="studentCode"
-                >
-                  Student Code
-                </label>
-                <input
-                  className={`w-full rounded-xl border ${errors.studentCode ? "border-red-400" : "border-slate-200"} bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30`}
-                  id="studentCode"
-                  name="studentCode"
-                  onChange={handleChange}
-                  placeholder="SE123456"
-                  type="text"
-                  value={form.studentCode}
-                  required
-                />
-                {errors.studentCode && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.studentCode}
-                  </p>
-                )}
-              </div>
+              {!isLecturer && (
+                <div className="space-y-2">
+                  <label
+                    className="text-sm font-medium text-slate-700"
+                    htmlFor="studentCode"
+                  >
+                    Student Code
+                  </label>
+                  <input
+                    className={`w-full rounded-xl border ${errors.studentCode ? "border-red-400" : "border-slate-200"} bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30`}
+                    id="studentCode"
+                    name="studentCode"
+                    onChange={handleChange}
+                    placeholder="SE123456"
+                    type="text"
+                    value={form.studentCode}
+                    required={!isLecturer}
+                  />
+                  {errors.studentCode && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.studentCode}
+                    </p>
+                  )}
+                </div>
+              )}
               <button
                 className="w-full rounded-xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:ring-offset-2 focus:ring-offset-white"
                 type="submit"
               >
-                Create account
+                Create {isLecturer ? "lecturer" : "student"} account
               </button>
             </form>
             <div className="space-y-4 text-xs text-slate-500">

@@ -119,16 +119,7 @@ export default function MyTasks() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">My Tasks</h1>
-        </div>
-        <button className="rounded bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">
-          + New Task
-        </button>
-      </div>
-
-      <div className="mb-4 flex gap-3 flex-wrap">
+      <div className="mb-4 flex gap-3 flex-wrap items-center">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-slate-700">
             Priority:
@@ -177,6 +168,9 @@ export default function MyTasks() {
           }}
           style={{ maxWidth: 280 }}
         />
+        <button className="ml-auto rounded bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">
+          + New Task
+        </button>
       </div>
 
       <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md bg-white">

@@ -84,3 +84,33 @@
   border-top: 1px solid #e5e7eb;
   margin: 6px 0;
 }
+
+@media (max-width: 768px) {
+  .topbar {
+    height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-search {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .topbar-user {
+    justify-content: flex-end;
+  }
+
+  .user-trigger {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .dropdown {
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(180px, 100%);
+  }
+}

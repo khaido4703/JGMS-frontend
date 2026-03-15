@@ -114,3 +114,30 @@
   background: #dcfce7;
   font-weight: 600;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    overflow: visible;
+  }
+
+  .logo-link {
+    margin-bottom: 16px;
+  }
+
+  .menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .menu a {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}

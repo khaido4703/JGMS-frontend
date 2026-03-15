@@ -7,6 +7,7 @@ import Dashboard from "../pages/Admin/Dashboard";
 import ManageGroups from "../pages/Admin/ManageGroups";
 import ManageLectures from "../pages/Admin/ManageLecture";
 import StudentDashboard from "../pages/student/Dashboard";
+import StudentMyGroup from "../pages/student/MyGroup";
 import StudentProfile from "../pages/student/Profile";
 import MyTasks from "../pages/student/MyTasks";
 import KanbanPage from "../pages/student/KanbanPage";
@@ -70,6 +71,10 @@ const AppRoutes = () =>
               element: <StudentDashboard />,
             },
             { path: "profile", element: <StudentProfile /> },
+            {
+              path: "my-group",
+              element: <StudentMyGroup />,
+            },
             {
               path: "tasks",
               element: <MyTasks />,

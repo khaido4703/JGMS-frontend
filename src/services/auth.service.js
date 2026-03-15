@@ -9,12 +9,25 @@ export const AuthService = {
       isLoading: true,
     });
   },
-  
-  register({ email, password, fullName, phone, studentCode } = {}) {
+
+  registerStudent({ email, password, fullName, phone, studentCode } = {}) {
     return BaseService.post({
       url: API.AUTH.REGISTER,
       payload: { email, password, fullName, phone, studentCode },
       isLoading: true,
     });
-  }
+  },
+
+  registerLecturer({ email, password, fullName, phone } = {}) {
+    return BaseService.post({
+      url: API.AUTH.REGISTER_LECTURER,
+      payload: { email, password, fullName, phone },
+      isLoading: true,
+    });
+  },
+
+  // Keep backward compatibility for existing calls.
+  register(payload = {}) {
+    return this.registerStudent(payload);
+  },
 };
