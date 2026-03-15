@@ -1,25 +1,155 @@
 import "./Table.css";
 import Pagination from "../../components/Pagination";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../components/coreUI/Modal";
+import { AdminGroupService } from "../../services/admin/adminGroup.service";
+import { toast } from "react-toastify";
 
 export default function ManageGroups() {
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [editingGroup, setEditingGroup] = useState(null);
+
+  const [formData, setFormData] = useState({
+    groupCode: "",
+    groupName: "",
+    lecturerId: "",
+    leaderId: "",
+    status: "active"
+});
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const res = await AdminGroupService.getAllGroups();
+      console.log("API RESPONSE:", res.data);
+      setGroups(res.data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch groups");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      groupCode: "",
+      groupName: "",
+      lecturerId: "",
+      leaderId: "",
+      status: "active",
+    });
+    setEditingGroup(null);
+  };
+
+  const handleOpenCreate = () => {
+    resetForm();
+    setOpen(true);
+  };
+
+  const handleOpenEdit = (group) => {
+    setEditingGroup(group);
+
+    setFormData({
+      groupCode: group.groupCode || "",
+      groupName: group.groupName || "",
+      lecturerId: group.lecturerId || "",
+      leaderId: group.leaderId || "",
+      status: group.status || "active"
+    });
+
+    setOpen(true);
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async () => {
+    const regex = /^SE\d{4}$/;
+
+    if (!regex.test(formData.groupCode)) {
+      toast.error("Group code must be SE + 4 digits (ex: SE1234)");
+      return;
+    }
+
+    try {
+
+      const payload = {
+          groupCode: formData.groupCode,
+          groupName: formData.groupName,
+          lecturerId: String(formData.lecturerId),
+          leaderId: String(formData.leaderId),
+          status: formData.status
+      };
+
+      if (editingGroup) {
+        await AdminGroupService.updateGroup(
+          editingGroup.groupCode,
+          payload
+        );
+        toast.success("Group updated successfully!");
+      } else {
+        await AdminGroupService.createGroup(payload);
+        toast.success("Group created successfully!");
+      }
+      
+
+      setOpen(false);
+      resetForm();
+      fetchGroups();
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Operation failed");
+    }
+  };
+
+  const handleDelete = async (groupCode) => {
+    if (!window.confirm("Delete this group?")) return;
+
+    try {
+      await AdminGroupService.deleteGroup(groupCode);
+      toast.success("Group deleted");
+      fetchGroups();
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
+  };
+
   return (
     <>
-    <div className="page-header">
+      <div className="page-header">
         <h1>Manage Student Groups</h1>
-        <button className="btn-primary" onClick={() => setOpen(true)}>
+
+        <button
+          className="btn-primary"
+          onClick={handleOpenCreate}
+        >
           + Create New Group
         </button>
       </div>
 
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
         <table>
           <thead>
             <tr>
               <th>GROUP ID</th>
               <th>GROUP NAME</th>
+              <th>LEADER</th>
               <th>LECTURER</th>
               <th>PROJECT</th>
               <th>ACTION</th>
@@ -27,39 +157,105 @@ export default function ManageGroups() {
           </thead>
 
           <tbody>
-            <tr>
-              <td>G01</td>
-              <td>
-                <strong>The Innovators</strong>
-                <p>5 Members</p>
-              </td>
-              <td>Tuan Khai</td>
-              <td>
-                <span className="badge">E-commerce Platform</span>
-              </td>
-              <td>coding</td>
-            </tr>
+            {groups.map(group => (
+              <tr key={group.groupId}>
+                <td>{group.groupCode}</td>
+
+                <td>
+                  <strong>{group.groupName}</strong>
+                  <p>{group.memberCount} Members</p>
+                </td>
+
+                <td>{group.leaderName || "No leader"}</td>
+
+                <td>{group.lecturerName}</td>
+
+                <td>
+                  <span className="badge">
+                    {group.status}
+                  </span>
+                </td>
+
+                <td>
+                  <div className="action-buttons">
+                  <button
+                    className="btn-edit"
+                    onClick={() => handleOpenEdit(group)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDelete(group.groupCode)}
+                  >
+                    Delete
+                  </button>
+                </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
-       <Modal
-        title="Create New Group"
+      )}
+
+      <Modal
+        title={
+          editingGroup
+            ? "Edit Group"
+            : "Create New Group"
+        }
         open={open}
         onClose={() => setOpen(false)}
       >
-        <input placeholder="Group Name" />
-        <input placeholder="Project Title" />
-        <input placeholder="Class" />
-        <input placeholder="Email" />
-        <input placeholder="Phone" />
-        <select>
-          <option>Select Lecturer</option>
-          <option>Thay giao ba</option>
-          <option>Anh do mixi</option>
-          <option>Tu sena</option>
-        </select>
+        <div className="modal-form">
 
-        <button className="btn-primary full">Create</button>
+          <input
+            name="groupCode"
+            placeholder="Group Code (SE0000)"
+            value={formData.groupCode}
+            onChange={handleChange}
+          />
+
+          <input
+            name="groupName"
+            placeholder="Group Name"
+            value={formData.groupName}
+            onChange={handleChange}
+          />
+
+          <input
+            name="lecturerId"
+            placeholder="Lecturer ID"
+            value={formData.lecturerId}
+            onChange={handleChange}
+          />
+
+          <input
+            name="leaderId"
+            placeholder="Leader ID"
+            value={formData.leaderId}
+            onChange={handleChange}
+          />
+
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <button
+            className="btn-primary full"
+            onClick={handleSubmit}
+          >
+            {editingGroup ? "Update Group" : "Create Group"}
+          </button>
+        </div>
       </Modal>
+
       <Pagination
         page={page}
         totalPages={5}
@@ -68,3 +264,4 @@ export default function ManageGroups() {
     </>
   );
 }
+

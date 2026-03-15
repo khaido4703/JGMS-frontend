@@ -28,12 +28,22 @@ export default function Sidebar() {
       case "lecturer":
         return (
           <>
-            <NavLink to="/lecturer" end>
-              Dashboard
-            </NavLink>
-            <NavLink to="/lecturer/groups">My Groups</NavLink>
-            <NavLink to="/lecturer/students">My Students</NavLink>
-          </>
+          <NavLink to="/lecturer" end>
+            Dashboard
+          </NavLink>
+
+          <NavLink to="/profile">
+            Profile
+          </NavLink>
+
+          <NavLink to="/lecturer/reports">
+            Progress Reports
+          </NavLink>
+
+          <NavLink to="/lecturer/github">
+            GitHub Reports
+          </NavLink>
+        </>
         );
       case "student":
         return (
@@ -42,6 +52,9 @@ export default function Sidebar() {
               Dashboard
             </NavLink>
             <NavLink to="/student/kanban">Sprint Board</NavLink>
+            <NavLink to="/student/profile">
+              Profile
+            </NavLink>
             <NavLink to="/student/tasks">My Tasks</NavLink>
             <NavLink to="/student/assignments">Assignments</NavLink>
           </>
