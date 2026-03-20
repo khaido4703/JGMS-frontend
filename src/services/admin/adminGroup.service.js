@@ -26,4 +26,10 @@ export const AdminGroupService = {
       url: `/api/admin/groups/${groupCode}`,
     });
   },
+
+  getGroupDetail(groupCode){
+    return BaseService.get({
+      url: `/api/admin/groups/${groupCode}`
+    })
+  }
 };

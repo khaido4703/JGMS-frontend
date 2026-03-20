@@ -55,8 +55,21 @@ export default function ManageLectures() {
                 <td>{lec.phone}</td>
                 <td>-</td>
                 <td>
-                  <button>Edit</button>
-                  <button>Delete</button>
+                  <div className="action-buttons">
+                  <button
+                    className="btn-edit"
+                    onClick={() => handleOpenEdit(group)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDelete(group.groupCode)}
+                  >
+                    Delete
+                  </button>
+                </div>
                 </td>
               </tr>
             ))}

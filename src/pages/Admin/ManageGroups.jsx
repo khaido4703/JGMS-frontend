@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Modal from "../../components/coreUI/Modal";
 import { AdminGroupService } from "../../services/admin/adminGroup.service";
 import { toast } from "react-toastify";
+import React from "react";
 
 export default function ManageGroups() {
   const [groups, setGroups] = useState([]);
@@ -11,6 +12,8 @@ export default function ManageGroups() {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [expandedGroup, setExpandedGroup] = useState(null);
+  const [groupMembers, setGroupMembers] = useState({})
 
   const [formData, setFormData] = useState({
     groupCode: "",
@@ -44,6 +47,7 @@ export default function ManageGroups() {
       groupName: "",
       lecturerId: "",
       leaderId: "",
+      memberIds: [],
       status: "active",
     });
     setEditingGroup(null);
@@ -76,44 +80,45 @@ export default function ManageGroups() {
   };
 
   const handleSubmit = async () => {
-    const regex = /^SE\d{4}$/;
-
-    if (!regex.test(formData.groupCode)) {
-      toast.error("Group code must be SE + 4 digits (ex: SE1234)");
-      return;
-    }
-
-    try {
-
+  try {
+    if (editingGroup) {
       const payload = {
-          groupCode: formData.groupCode,
-          groupName: formData.groupName,
-          lecturerId: String(formData.lecturerId),
-          leaderId: String(formData.leaderId),
-          status: formData.status
+        groupCode: formData.groupCode,
+        groupName: formData.groupName,
+        lecturerId: String(formData.lecturerId),
+        leaderId: String(formData.leaderId),
+        status: formData.status
       };
 
-      if (editingGroup) {
-        await AdminGroupService.updateGroup(
-          editingGroup.groupCode,
-          payload
-        );
-        toast.success("Group updated successfully!");
-      } else {
-        await AdminGroupService.createGroup(payload);
-        toast.success("Group created successfully!");
-      }
-      
+      await AdminGroupService.updateGroup(
+        editingGroup.groupCode,
+        payload
+      );
 
-      setOpen(false);
-      resetForm();
-      fetchGroups();
+      toast.success("Group updated successfully!");
+    } else {
+      const payload = {
+        groupCode: formData.groupCode,
+        groupName: formData.groupName,
+        lecturerId: String(formData.lecturerId),
+        leaderId: String(formData.leaderId),
+        memberIds: formData.memberIds || []
+      };
 
-    } catch (err) {
-      console.error(err);
-      toast.error("Operation failed");
+      await AdminGroupService.createGroup(payload);
+
+      toast.success("Group created successfully!");
     }
-  };
+
+    setOpen(false);
+    resetForm();
+    fetchGroups();
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Operation failed");
+  }
+};
 
   const handleDelete = async (groupCode) => {
     if (!window.confirm("Delete this group?")) return;
@@ -127,6 +132,26 @@ export default function ManageGroups() {
       toast.error("Delete failed");
     }
   };
+
+  const handleExpand = async (groupCode) => {
+    if(expandedGroup === groupCode){
+      setExpandedGroup(null);
+      return;
+    }
+
+    try {
+      const res = await AdminGroupService.getGroupDetail(groupCode);
+
+      setGroupMembers((prev) => ({
+        ...prev,
+        [groupCode]: res.data.members
+      }));
+
+      setExpandedGroup(groupCode);
+    } catch (err) {
+      console.error("Error loading group detail",err);
+    }
+  }
 
   return (
     <>
@@ -158,7 +183,10 @@ export default function ManageGroups() {
 
           <tbody>
             {groups.map(group => (
-              <tr key={group.groupId}>
+            <React.Fragment key={group.groupCode}>
+              <tr key={group.groupCode}
+              onClick={() => handleExpand(group.groupCode)}
+              style={{cursor : "pointer"}}>
                 <td>{group.groupCode}</td>
 
                 <td>
@@ -180,20 +208,54 @@ export default function ManageGroups() {
                   <div className="action-buttons">
                   <button
                     className="btn-edit"
-                    onClick={() => handleOpenEdit(group)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(group);
+                    }}
                   >
                     Edit
                   </button>
 
                   <button
                     className="btn-delete"
-                    onClick={() => handleDelete(group.groupCode)}
+                    onClick={(e) =>{
+                      e.stopPropagation()
+                      handleDelete(group.groupCode)} }
                   >
                     Delete
                   </button>
                 </div>
                 </td>
               </tr>
+
+              {expandedGroup === group.groupCode && (
+                <tr>
+                  <td colSpan="6">
+                    <table className="member-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Leader</th>
+                          <th>Joined At</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {groupMembers[group.groupCode]?.map((m) => (
+                          <tr key = {m.memberId}>
+                            <td>{m.userName}</td>
+                            <td>{m.email}</td>
+                            <td>{m.isLeader ? "Leader" : "-"}</td>
+                            <td>{m.joinedAt}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

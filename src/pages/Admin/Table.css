@@ -90,3 +90,18 @@ td {
 .btn-delete:hover {
   transform: translateY(-1px);
 }
+
+.member-table {
+  width: 100%;
+  background: #f9f9f9;
+  margin-top: 10px;
+}
+
+.member-table th {
+  text-align: left;
+  padding: 8px;
+}
+
+.member-table td {
+  padding: 8px;
+}
