@@ -14,18 +14,23 @@ export default function ManageGroups() {
   const [editingGroup, setEditingGroup] = useState(null);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState({})
+  const [lecturers, setLecturers] = useState([]);
+  const [students, setStudents] = useState([]);
+
+  useEffect(() => {
+    fetchGroups();
+    fetchLecturers();
+    fetchStudents();
+  }, []);
 
   const [formData, setFormData] = useState({
     groupCode: "",
     groupName: "",
     lecturerId: "",
     leaderId: "",
+    memberIds: [],
     status: "active"
 });
-
-  useEffect(() => {
-    fetchGroups();
-  }, []);
 
   const fetchGroups = async () => {
     try {
@@ -38,6 +43,24 @@ export default function ManageGroups() {
       toast.error("Failed to fetch groups");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLecturers = async () => {
+    try {
+      const res = await AdminGroupService.getLecturers(); // 👈 cần API này
+      setLecturers(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const res = await AdminGroupService.getStudents(); // 👈 cần API này
+      setStudents(res.data || []);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -286,19 +309,49 @@ export default function ManageGroups() {
             onChange={handleChange}
           />
 
-          <input
+          <select
             name="lecturerId"
-            placeholder="Lecturer ID"
             value={formData.lecturerId}
             onChange={handleChange}
-          />
+          >
+            <option value="">Select Lecturer</option>
+            {lecturers.map(l => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
 
-          <input
+          <select
             name="leaderId"
-            placeholder="Leader ID"
             value={formData.leaderId}
             onChange={handleChange}
-          />
+          >
+            <option value="">Select Leader</option>
+            {students.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            multiple
+            value={formData.memberIds}
+            onChange={(e) => {
+              const values = Array.from(
+                e.target.selectedOptions,
+                option => option.value
+              );
+              setFormData({ ...formData, memberIds: values });
+            }}
+          >
+            {students.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
 
           <select
             name="status"
