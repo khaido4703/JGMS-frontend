@@ -31,5 +31,34 @@ export const AdminGroupService = {
     return BaseService.get({
       url: `/api/admin/groups/${groupCode}`
     })
-  }
-};
+  },
+
+  getLecturers() {
+    return BaseService.get({
+      url: "/api/admin/lecturers",
+    });
+  },
+
+  getStudents() {
+    return BaseService.get({
+      url: "/api/admin/students/available",
+    });
+  },
+
+  addMembers(groupCode, payload) {
+    return BaseService.post({
+      url: `/api/admin/groups/${groupCode}/members`,
+      payload,
+    });
+  },
+
+  removeMember(groupCode, studentId) {
+    return BaseService.remove({
+      url: `/api/admin/groups/${groupCode}/members/${studentId}`,
+    });
+  },
+}
+
+ 
+
+  
