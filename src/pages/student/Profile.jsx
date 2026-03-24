@@ -86,8 +86,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="mx-auto max-w-7xl px-6">
+    <div className="p-4 md:p-2 xl:p-4">
+      <div className="mx-auto px-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">
           <div className="px-8 py-5 border-b border-slate-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">

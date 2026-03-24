@@ -290,7 +290,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-4 md:p-6 xl:p-8">
+    <div className="p-4 md:p-2 xl:p-4">
       <Row gutter={[16, 16]} className="mb-6">
         {taskStatusCards.map((item) => (
           <Col xs={24} md={12} xl={8} key={item.title}>

@@ -142,7 +142,7 @@ export default function MyGroup() {
 
   if (notAssigned || !group) {
     return (
-      <div className="p-4 md:p-6 xl:p-8">
+      <div className="p-4 md:p-2 xl:p-4">
         <Card className="rounded-3xl shadow-sm">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}

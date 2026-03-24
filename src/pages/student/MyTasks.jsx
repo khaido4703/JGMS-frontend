@@ -1,70 +1,211 @@
-import { useState } from "react";
-import { Table, Tag, Input, Select } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Button,
+  Descriptions,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Spin,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
+import {
+  CheckCircleOutlined,
+  EyeOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import { toast } from "react-toastify";
+import { StudentService } from "../../services/student.service";
+
+const STATUS_OPTIONS = [
+  { value: "All", label: "All" },
+  { value: "TO DO", label: "To Do" },
+  { value: "IN PROGRESS", label: "In Progress" },
+  { value: "DONE", label: "Done" },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: "All", label: "All" },
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+];
+
+const STATUS_COLORS = {
+  DONE: "success",
+  "IN PROGRESS": "processing",
+  "TO DO": "default",
+};
+
+const STATUS_LABELS = {
+  DONE: "Done",
+  "IN PROGRESS": "In Progress",
+  "TO DO": "To Do",
+};
+
+const PRIORITY_COLORS = {
+  High: "red",
+  Medium: "orange",
+  Low: "blue",
+};
+
+const STATUS_PAYLOAD_MAP = {
+  "TO DO": "To Do",
+  "IN PROGRESS": "In Progress",
+  DONE: "Done",
+};
+
+const normalizeStatus = (status) => {
+  const value = String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]/g, " ");
+
+  if (value === "done") return "DONE";
+  if (value === "to do" || value === "todo") return "TO DO";
+  if (value === "in progress" || value === "inprogress") return "IN PROGRESS";
+  return status || "-";
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const mapTask = (task) => ({
+  ...task,
+  key: task.taskId,
+  id: task.jiraIssueKey || `TASK-${task.taskId}`,
+  title: task.title || "-",
+  priority: task.priority || "-",
+  status: normalizeStatus(task.status),
+  dueDateLabel: formatDate(task.dueDate),
+});
 
 export default function MyTasks() {
-  const [tasks] = useState([
-    {
-      id: "T-101",
-      title: "Setup Project Repository",
-      priority: "High",
-      status: "DONE",
-      dueDate: "Oct 20, 2023",
-    },
-    {
-      id: "T-102",
-      title: "Design Database Schema",
-      priority: "High",
-      status: "IN PROGRESS",
-      dueDate: "Oct 22, 2023",
-    },
-    {
-      id: "T-103",
-      title: "Implement Login API",
-      priority: "Medium",
-      status: "TO DO",
-      dueDate: "Oct 25, 2023",
-    },
-    {
-      id: "T-104",
-      title: "Write Unit Tests",
-      priority: "Low",
-      status: "TO DO",
-      dueDate: "Oct 28, 2023",
-    },
-    {
-      id: "T-105",
-      title: "Final Code Review",
-      priority: "Medium",
-      status: "TO DO",
-      dueDate: "Nov 02, 2023",
-    },
-  ]);
-
+  const [tasks, setTasks] = useState([]);
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [actionTaskId, setActionTaskId] = useState(null);
   const itemsPerPage = 5;
 
-  const statusColors = {
-    DONE: "success",
-    "IN PROGRESS": "warning",
-    "TO DO": "processing",
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await StudentService.getMyTasks();
+      const data = response?.data ?? [];
+      setTasks(Array.isArray(data) ? data.map(mapTask) : []);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to load tasks");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const priorityColors = {
-    High: "red",
-    Medium: "orange",
-    Low: "blue",
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  const openTaskDetail = async (taskId) => {
+    try {
+      setDetailOpen(true);
+      setDetailLoading(true);
+      const response = await StudentService.getMyTaskById(taskId);
+      const data = response?.data ?? response;
+      setSelectedTask(mapTask(data));
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to load task details",
+      );
+      setDetailOpen(false);
+      setSelectedTask(null);
+    } finally {
+      setDetailLoading(false);
+    }
   };
+
+  const handleUpdateStatus = async (task, nextStatus) => {
+    if (!nextStatus || nextStatus === task.status) return;
+
+    try {
+      setActionTaskId(task.taskId);
+      await StudentService.updateMyTaskStatus(task.taskId, {
+        status: STATUS_PAYLOAD_MAP[nextStatus] || nextStatus,
+        notes: task.notes || "",
+        workHours: task.workHours || 0,
+      });
+      toast.success("Task status updated successfully");
+      await loadTasks();
+
+      if (selectedTask?.taskId === task.taskId) {
+        await openTaskDetail(task.taskId);
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to update task status",
+      );
+    } finally {
+      setActionTaskId(null);
+    }
+  };
+
+  const handleCompleteTask = async (taskId) => {
+    try {
+      setActionTaskId(taskId);
+      await StudentService.completeMyTask(taskId);
+      toast.success("Task marked as completed");
+      await loadTasks();
+
+      if (selectedTask?.taskId === taskId) {
+        await openTaskDetail(taskId);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to complete task");
+    } finally {
+      setActionTaskId(null);
+    }
+  };
+
+  const filteredTasks = useMemo(
+    () =>
+      tasks.filter((task) => {
+        const matchesPriority =
+          priorityFilter === "All" || task.priority === priorityFilter;
+        const matchesStatus =
+          statusFilter === "All" || task.status === statusFilter;
+        const keyword = searchTerm.trim().toLowerCase();
+        const matchesSearch =
+          !keyword ||
+          task.title.toLowerCase().includes(keyword) ||
+          task.id.toLowerCase().includes(keyword);
+        return matchesPriority && matchesStatus && matchesSearch;
+      }),
+    [tasks, priorityFilter, statusFilter, searchTerm],
+  );
 
   const columns = [
     {
       title: "TASK ID",
       dataIndex: "id",
       key: "id",
-      width: 120,
+      width: 140,
       render: (id) => (
         <span className="font-mono text-xs font-bold text-slate-400">{id}</span>
       ),
@@ -83,7 +224,7 @@ export default function MyTasks() {
       key: "priority",
       width: 120,
       render: (priority) => (
-        <Tag color={priorityColors[priority] || "default"}>{priority}</Tag>
+        <Tag color={PRIORITY_COLORS[priority] || "default"}>{priority}</Tag>
       ),
     },
     {
@@ -92,34 +233,56 @@ export default function MyTasks() {
       key: "status",
       width: 150,
       render: (status) => (
-        <Tag color={statusColors[status] || "default"}>{status}</Tag>
+        <Tag color={STATUS_COLORS[status] || "default"}>
+          {STATUS_LABELS[status] || status}
+        </Tag>
       ),
     },
     {
       title: "DUE DATE",
-      dataIndex: "dueDate",
+      dataIndex: "dueDateLabel",
       key: "dueDate",
       width: 140,
       render: (date) => (
-        <span className="text-sm text-slate-500 font-medium">{date}</span>
+        <span className="text-sm font-medium text-slate-500">{date}</span>
+      ),
+    },
+    {
+      title: "ACTIONS",
+      key: "actions",
+      width: 300,
+      render: (_, record) => (
+        <Space wrap size="small">
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => openTaskDetail(record.taskId)}
+          >
+            View
+          </Button>
+          <Select
+            value={record.status}
+            onChange={(value) => handleUpdateStatus(record, value)}
+            options={STATUS_OPTIONS.filter((item) => item.value !== "All")}
+            style={{ width: 150 }}
+            loading={actionTaskId === record.taskId}
+          />
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            disabled={record.status === "DONE"}
+            loading={actionTaskId === record.taskId}
+            onClick={() => handleCompleteTask(record.taskId)}
+          >
+            Complete
+          </Button>
+        </Space>
       ),
     },
   ];
 
-  const filteredTasks = tasks.filter((task) => {
-    const matchesPriority =
-      priorityFilter === "All" || task.priority === priorityFilter;
-    const matchesStatus =
-      statusFilter === "All" || task.status === statusFilter;
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.id.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesPriority && matchesStatus && matchesSearch;
-  });
-
   return (
-    <div className="p-6">
-      <div className="mb-4 flex gap-3 flex-wrap items-center">
+    <div className="p-4 md:p-2 xl:p-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-slate-700">
             Priority:
@@ -130,13 +293,8 @@ export default function MyTasks() {
               setPriorityFilter(value);
               setCurrentPage(1);
             }}
-            style={{ width: 120 }}
-            options={[
-              { value: "All", label: "All" },
-              { value: "High", label: "High" },
-              { value: "Medium", label: "Medium" },
-              { value: "Low", label: "Low" },
-            ]}
+            style={{ width: 140 }}
+            options={PRIORITY_OPTIONS}
           />
         </div>
 
@@ -148,13 +306,8 @@ export default function MyTasks() {
               setStatusFilter(value);
               setCurrentPage(1);
             }}
-            style={{ width: 150 }}
-            options={[
-              { value: "All", label: "All" },
-              { value: "TO DO", label: "TO DO" },
-              { value: "IN PROGRESS", label: "IN PROGRESS" },
-              { value: "DONE", label: "DONE" },
-            ]}
+            style={{ width: 160 }}
+            options={STATUS_OPTIONS}
           />
         </div>
 
@@ -168,16 +321,14 @@ export default function MyTasks() {
           }}
           style={{ maxWidth: 280 }}
         />
-        <button className="ml-auto rounded bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">
-          + New Task
-        </button>
       </div>
 
-      <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
         <Table
+          loading={loading}
           columns={columns}
           dataSource={filteredTasks}
-          rowKey="id"
+          rowKey="taskId"
           pagination={{
             current: currentPage,
             pageSize: itemsPerPage,
@@ -190,6 +341,9 @@ export default function MyTasks() {
           }}
           bordered={false}
           size="middle"
+          locale={{
+            emptyText: loading ? <Spin size="small" /> : "No tasks found",
+          }}
           rowClassName={(_, index) =>
             index % 2 === 0 ? "bg-white" : "bg-slate-50"
           }
@@ -216,6 +370,97 @@ export default function MyTasks() {
           }}
         />
       </div>
+
+      <Modal
+        title="Task Details"
+        open={detailOpen}
+        onCancel={() => {
+          setDetailOpen(false);
+          setSelectedTask(null);
+        }}
+        footer={null}
+        width={820}
+      >
+        {detailLoading ? (
+          <div className="flex min-h-40 items-center justify-center">
+            <Spin />
+          </div>
+        ) : selectedTask ? (
+          <Space direction="vertical" size={16} style={{ width: "100%" }}>
+            <Descriptions bordered column={2} size="middle">
+              <Descriptions.Item label="Task ID">
+                {selectedTask.taskId}
+              </Descriptions.Item>
+              <Descriptions.Item label="Jira Key">
+                {selectedTask.jiraIssueKey || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Title" span={2}>
+                {selectedTask.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={STATUS_COLORS[selectedTask.status] || "default"}>
+                  {STATUS_LABELS[selectedTask.status] || selectedTask.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Priority">
+                <Tag
+                  color={PRIORITY_COLORS[selectedTask.priority] || "default"}
+                >
+                  {selectedTask.priority}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Due Date">
+                {formatDate(selectedTask.dueDate)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Completed At">
+                {formatDate(selectedTask.completedAt)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Assigned To">
+                {selectedTask.assignedToName || selectedTask.assignedTo || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Requirement ID">
+                {selectedTask.requirementId ?? "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Jira Issue ID">
+                {selectedTask.jiraIssueId ?? "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Jira Status">
+                {selectedTask.jiraStatus || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {formatDate(selectedTask.createdAt)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Updated At">
+                {formatDate(selectedTask.updatedAt)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description" span={2}>
+                <Typography.Paragraph style={{ marginBottom: 0 }}>
+                  {selectedTask.description || "-"}
+                </Typography.Paragraph>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Space wrap>
+              <Select
+                value={selectedTask.status}
+                onChange={(value) => handleUpdateStatus(selectedTask, value)}
+                options={STATUS_OPTIONS.filter((item) => item.value !== "All")}
+                style={{ width: 180 }}
+                loading={actionTaskId === selectedTask.taskId}
+              />
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                disabled={selectedTask.status === "DONE"}
+                loading={actionTaskId === selectedTask.taskId}
+                onClick={() => handleCompleteTask(selectedTask.taskId)}
+              >
+                Mark Complete
+              </Button>
+            </Space>
+          </Space>
+        ) : null}
+      </Modal>
     </div>
   );
 }

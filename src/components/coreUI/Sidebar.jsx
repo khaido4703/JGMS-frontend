@@ -1,11 +1,74 @@
 import { NavLink, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ROUTER_URL } from "../../consts/router.const";
+import { StudentService } from "../../services/student.service";
 import "./Sidebar.css";
 
 export default function Sidebar() {
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase();
+  const [isStudentLeader, setIsStudentLeader] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadStudentLeaderState = async () => {
+      if (userRole !== "student" || !user?.email) {
+        setIsStudentLeader(false);
+        return;
+      }
+
+      try {
+        const response = await StudentService.getMyGroup({ isLoading: false });
+        const members = response?.data?.members;
+        const currentEmail = user.email.toLowerCase();
+
+        if (ignore) return;
+
+        const nextIsLeader = Array.isArray(members)
+          ? members.some(
+              (member) =>
+                member?.isLeader &&
+                member?.email?.toLowerCase() === currentEmail,
+            )
+          : false;
+
+        setIsStudentLeader(nextIsLeader);
+      } catch {
+        if (!ignore) {
+          setIsStudentLeader(false);
+        }
+      }
+    };
+
+    loadStudentLeaderState();
+
+    return () => {
+      ignore = true;
+    };
+  }, [user?.email, userRole]);
+
+  const studentMenuItems = useMemo(
+    () => (
+      <>
+        <NavLink to={ROUTER_URL.STUDENT.DASHBOARD} end>
+          Dashboard
+        </NavLink>
+        <NavLink to={ROUTER_URL.STUDENT.MY_GROUP}>My Group</NavLink>
+        <NavLink to={ROUTER_URL.STUDENT.KANBAN}>Board</NavLink>
+        <NavLink to="/student/tasks">My Tasks</NavLink>
+        {isStudentLeader ? (
+          <>
+            <NavLink to={ROUTER_URL.STUDENT.REPORTS}>Progress Reports</NavLink>
+            <NavLink to={ROUTER_URL.STUDENT.DOCUMENTS}>Documents</NavLink>
+          </>
+        ) : null}
+        <NavLink to="/student/profile">Profile</NavLink>
+      </>
+    ),
+    [isStudentLeader],
+  );
 
   const getMenuItems = () => {
     switch (userRole) {
@@ -34,17 +97,7 @@ export default function Sidebar() {
           </>
         );
       case "student":
-        return (
-          <>
-            <NavLink to={ROUTER_URL.STUDENT.DASHBOARD} end>
-              Dashboard
-            </NavLink>
-            <NavLink to={ROUTER_URL.STUDENT.MY_GROUP}>My Group</NavLink>
-            <NavLink to={ROUTER_URL.STUDENT.KANBAN}>Sprint Board</NavLink>
-            <NavLink to="/student/profile">Profile</NavLink>
-            <NavLink to="/student/tasks">My Tasks</NavLink>
-          </>
-        );
+        return studentMenuItems;
       default:
         return null;
     }
