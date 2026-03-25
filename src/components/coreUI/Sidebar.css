@@ -1,5 +1,5 @@
 .sidebar {
-  width: 240px;
+  width: 248px;
   height: 100vh;
   position: sticky;
   top: 0;
@@ -8,15 +8,34 @@
   padding: 20px;
   overflow-y: auto;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  transition:
+    width 0.25s ease,
+    padding 0.25s ease;
+}
+
+.sidebar.collapsed {
+  width: 88px;
+  padding-inline: 14px;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
 .logo-link {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
   transition: opacity 0.2s;
-  margin-bottom: 24px;
   padding: 4px 0;
 }
 
@@ -24,95 +43,96 @@
   opacity: 0.7;
 }
 
-.logo-link .flex {
-  display: flex;
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #34d399, #059669);
+  box-shadow: 0 10px 24px rgba(5, 150, 105, 0.22);
+  flex-shrink: 0;
 }
 
-.logo-link .items-center {
-  align-items: center;
-}
-
-.logo-link .gap-2 {
-  gap: 8px;
-}
-
-.logo-link .h-8 {
-  height: 32px;
-}
-
-.logo-link .w-8 {
-  width: 32px;
-}
-
-.logo-link .rounded {
-  border-radius: 4px;
-}
-
-.logo-link .bg-gradient-to-br {
-  background: linear-gradient(to bottom right, #34d399, #059669);
-}
-
-.logo-link .from-emerald-400 {
-  /* Gradient start color */
-}
-
-.logo-link .to-emerald-600 {
-  /* Gradient end color */
-}
-
-.logo-link .text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.logo-link .font-bold {
+.logo-text {
+  font-size: 1.5rem;
   font-weight: 700;
-}
-
-.logo-link .text-slate-900 {
   color: #0f172a;
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #16a34a;
-}
-
-.sidebar-header span {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.sidebar-menu {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease,
+    margin 0.2s ease;
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .menu a {
-  display: block;
-  padding: 10px 14px;
-  border-radius: 8px;
-  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #111827;
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .menu a:hover {
   background: #f0fdf4;
+  color: #065f46;
+  transform: translateX(2px);
 }
 
 .menu a.active {
-  background: #dcfce7;
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+  color: #065f46;
   font-weight: 600;
+}
+
+.menu-icon {
+  width: 20px;
+  display: inline-flex;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.menu-label {
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-top {
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo-link {
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .menu-label {
+  width: 0;
+  opacity: 0;
+}
+
+.sidebar.collapsed .menu a {
+  justify-content: center;
+  padding-inline: 12px;
+}
+
+.sidebar.collapsed .menu a:hover {
+  transform: none;
 }
 
 @media (max-width: 768px) {
@@ -124,10 +144,28 @@
     border-right: none;
     border-bottom: 1px solid #e5e7eb;
     overflow: visible;
+    transition: none;
   }
 
-  .logo-link {
+  .sidebar.collapsed {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .sidebar-top,
+  .sidebar.collapsed .sidebar-top {
     margin-bottom: 16px;
+  }
+
+  .logo-link,
+  .sidebar.collapsed .logo-link {
+    justify-content: flex-start;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+    width: auto;
+    opacity: 1;
   }
 
   .menu {
@@ -137,7 +175,17 @@
   }
 
   .menu a {
+    justify-content: flex-start;
     padding: 8px 12px;
     font-size: 14px;
+  }
+
+  .sidebar.collapsed .menu a {
+    padding: 8px 12px;
+  }
+
+  .sidebar.collapsed .menu-label {
+    width: auto;
+    opacity: 1;
   }
 }

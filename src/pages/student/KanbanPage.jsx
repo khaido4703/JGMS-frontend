@@ -55,6 +55,17 @@ export default function KanbanPage() {
     );
   }, [group?.members, user?.email]);
 
+  const visibleTabs = useMemo(
+    () => BOARD_TABS.filter((tab) => (tab.key === "task" ? isLeader : true)),
+    [isLeader],
+  );
+
+  useEffect(() => {
+    if (!visibleTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab("issues");
+    }
+  }, [activeTab, visibleTabs]);
+
   const renderContent = () => {
     if (groupLoading) {
       return (
@@ -82,20 +93,24 @@ export default function KanbanPage() {
       );
     }
 
-    return (
-      <TasksBoard
-        groupCode={group.groupCode}
-        isLeader={isLeader}
-        members={group.members ?? []}
-      />
-    );
+    if (activeTab === "task" && isLeader) {
+      return (
+        <TasksBoard
+          groupCode={group.groupCode}
+          isLeader={isLeader}
+          members={group.members ?? []}
+        />
+      );
+    }
+
+    return null;
   };
 
   return (
     <div className="p-4 md:p-2 xl:p-4">
       <div className="mb-6 overflow-x-auto border-b border-slate-200">
         <div className="flex min-w-max items-center gap-1">
-          {BOARD_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = activeTab === tab.key;
 
             return (

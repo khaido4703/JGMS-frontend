@@ -19,7 +19,6 @@ import {
   DashboardOutlined,
   FireOutlined,
   FundOutlined,
-  RiseOutlined,
 } from "@ant-design/icons";
 import {
   PieChart,
@@ -36,7 +35,7 @@ import {
 } from "recharts";
 import { StudentService } from "../../services/student.service";
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
 
 const COLORS = {
   Done: "#10b981",
@@ -44,50 +43,48 @@ const COLORS = {
   "To Do": "#f59e0b",
 };
 
-const MOCK_OVERVIEW = {
-  totalTasks: 24,
-  completedTasks: 10,
-  inProgressTasks: 8,
-  overdueTasks: 2,
-  completionRate: 42,
-  totalCommits: 57,
-  totalAdditions: 1340,
-  totalDeletions: 420,
-  totalChangedFiles: 38,
-  lastCommitDate: "2026-03-03T09:20:00.000Z",
+const EMPTY_OVERVIEW = {
+  totalTasks: 0,
+  completedTasks: 0,
+  inProgressTasks: 0,
+  overdueTasks: 0,
+  completionRate: 0,
+  totalCommits: 0,
+  lastCommitDate: null,
 };
 
-const MOCK_TASKS_BY_STATUS = {
-  todoTasks: 6,
-  inProgressTasks: 8,
-  doneTasks: 10,
-  totalTasks: 24,
+const EMPTY_TASKS_BY_STATUS = {
+  todoTasks: 0,
+  inProgressTasks: 0,
+  doneTasks: 0,
+  totalTasks: 0,
 };
 
-const MOCK_TASK_STATS = {
-  tasksAssigned: 24,
-  tasksCompleted: 10,
-  tasksPending: 14,
-  completionPercentage: 42,
+const EMPTY_TASK_STATS = {
+  tasksAssigned: 0,
+  tasksCompleted: 0,
+  tasksPending: 0,
+  completionPercentage: 0,
 };
 
-const MOCK_COMMIT_STATS = {
-  totalCommits: 57,
-  commitsThisWeek: 12,
-  commitsThisMonth: 34,
-  averageCommitsPerDay: 1.8,
-  lastCommitDate: "2026-03-03T09:20:00.000Z",
+const EMPTY_COMMIT_STATS = {
+  statisticId: 0,
+  userId: 0,
+  userName: "",
+  projectId: 0,
+  totalCommits: 0,
+  commitsThisWeek: 0,
+  commitsThisMonth: 0,
+  averageCommitsPerDay: 0,
+  lastCommitDate: null,
+  updatedAt: null,
 };
-
-const isEmptyData = (obj) =>
-  !obj ||
-  Object.values(obj).every((v) => v === 0 || v === null || v === undefined);
 
 export default function Dashboard() {
-  const [overview, setOverview] = useState(null);
-  const [tasksByStatus, setTasksByStatus] = useState(null);
-  const [taskStats, setTaskStats] = useState(null);
-  const [commitStats, setCommitStats] = useState(null);
+  const [overview, setOverview] = useState(EMPTY_OVERVIEW);
+  const [tasksByStatus, setTasksByStatus] = useState(EMPTY_TASKS_BY_STATUS);
+  const [taskStats, setTaskStats] = useState(EMPTY_TASK_STATS);
+  const [commitStats, setCommitStats] = useState(EMPTY_COMMIT_STATS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -103,16 +100,16 @@ export default function Dashboard() {
         const d2 = res2?.data ?? res2;
         const d3 = res3?.data ?? res3;
         const d4 = res4?.data ?? res4;
-        setOverview(isEmptyData(d1) ? MOCK_OVERVIEW : d1);
-        setTasksByStatus(isEmptyData(d2) ? MOCK_TASKS_BY_STATUS : d2);
-        setTaskStats(isEmptyData(d3) ? MOCK_TASK_STATS : d3);
-        setCommitStats(isEmptyData(d4) ? MOCK_COMMIT_STATS : d4);
+        setOverview(d1 ?? EMPTY_OVERVIEW);
+        setTasksByStatus(d2 ?? EMPTY_TASKS_BY_STATUS);
+        setTaskStats(d3 ?? EMPTY_TASK_STATS);
+        setCommitStats(d4 ?? EMPTY_COMMIT_STATS);
       } catch (err) {
         console.error("Failed to load dashboard data", err);
-        setOverview(MOCK_OVERVIEW);
-        setTasksByStatus(MOCK_TASKS_BY_STATUS);
-        setTaskStats(MOCK_TASK_STATS);
-        setCommitStats(MOCK_COMMIT_STATS);
+        setOverview(EMPTY_OVERVIEW);
+        setTasksByStatus(EMPTY_TASKS_BY_STATUS);
+        setTaskStats(EMPTY_TASK_STATS);
+        setCommitStats(EMPTY_COMMIT_STATS);
       } finally {
         setLoading(false);
       }
@@ -125,6 +122,7 @@ export default function Dashboard() {
       (tasksByStatus.inProgressTasks ?? 0) +
       (tasksByStatus.doneTasks ?? 0)
     : 0;
+  const doneTasks = tasksByStatus?.doneTasks ?? 0;
 
   const pct = (val) =>
     totalTasks > 0 ? Math.round(((val ?? 0) / totalTasks) * 100) : 0;
@@ -146,7 +144,9 @@ export default function Dashboard() {
     : [];
 
   const completionRate =
-    taskStats?.completionPercentage ?? overview?.completionRate ?? 0;
+    totalTasks > 0
+      ? pct(doneTasks)
+      : (taskStats?.completionPercentage ?? overview?.completionRate ?? 0);
 
   const formatDate = (iso) => {
     if (!iso) return "—";
@@ -195,7 +195,7 @@ export default function Dashboard() {
   const overviewStats = [
     {
       title: "Total Tasks",
-      value: overview?.totalTasks ?? totalTasks,
+      value: tasksByStatus?.totalTasks ?? totalTasks ?? 0,
       prefix: <BarChartOutlined />,
     },
     {
@@ -206,14 +206,12 @@ export default function Dashboard() {
     },
     {
       title: "Total Commits",
-      value: overview?.totalCommits ?? commitStats?.totalCommits ?? 0,
+      value: commitStats?.totalCommits ?? 0,
       prefix: <FundOutlined />,
     },
     {
       title: "Last Commit",
-      value: formatDate(
-        overview?.lastCommitDate ?? commitStats?.lastCommitDate,
-      ),
+      value: formatDate(commitStats?.lastCommitDate),
       prefix: <CalendarOutlined />,
       valueStyle: { fontSize: 18 },
     },
@@ -236,18 +234,13 @@ export default function Dashboard() {
       color: "#4f46e5",
     },
     {
-      label: "Lines Added",
-      value: `+${overview?.totalAdditions ?? 0}`,
-      color: "#059669",
+      label: "Last Commit Date",
+      value: formatDate(commitStats?.lastCommitDate),
+      color: "#0f172a",
     },
     {
-      label: "Lines Deleted",
-      value: `-${overview?.totalDeletions ?? 0}`,
-      color: "#dc2626",
-    },
-    {
-      label: "Files Changed",
-      value: overview?.totalChangedFiles ?? 0,
+      label: "Updated At",
+      value: formatDate(commitStats?.updatedAt),
       color: "#0f172a",
     },
   ];
@@ -255,26 +248,22 @@ export default function Dashboard() {
   const taskSummary = [
     {
       label: "Tasks Assigned",
-      value: taskStats?.tasksAssigned ?? overview?.totalTasks ?? 0,
+      value: taskStats?.tasksAssigned ?? 0,
       color: "#0f172a",
     },
     {
       label: "Tasks Completed",
-      value: taskStats?.tasksCompleted ?? overview?.completedTasks ?? 0,
+      value: taskStats?.tasksCompleted ?? 0,
       color: "#059669",
     },
     {
       label: "Tasks Pending",
-      value:
-        taskStats?.tasksPending ??
-        (overview
-          ? (overview.totalTasks ?? 0) - (overview.completedTasks ?? 0)
-          : 0),
+      value: taskStats?.tasksPending ?? 0,
       color: "#f59e0b",
     },
     {
       label: "In Progress",
-      value: overview?.inProgressTasks ?? tasksByStatus?.inProgressTasks ?? 0,
+      value: tasksByStatus?.inProgressTasks ?? 0,
       color: "#2563eb",
     },
     {
@@ -284,7 +273,7 @@ export default function Dashboard() {
     },
     {
       label: "Completion %",
-      value: `${Math.round(completionRate)}%`,
+      value: `${Math.round(taskStats?.completionPercentage ?? 0)}%`,
       color: "#7c3aed",
     },
   ];

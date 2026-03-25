@@ -22,6 +22,21 @@ const GREEN_BUTTON_STYLE = {
   borderColor: "#10b981",
 };
 
+const formatDateTimeLocal = (value) => {
+  if (!value) return undefined;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 const getInitialFormValues = (task) => ({
   title: task?.title,
   description: task?.description,
@@ -32,9 +47,7 @@ const getInitialFormValues = (task) => ({
   priority: task?.priority || "Medium",
   dueDate: task?.dueDate ? String(task.dueDate).slice(0, 10) : undefined,
   sprintId: task?.sprintId || undefined,
-  completedAt: task?.completedAt
-    ? new Date(task.completedAt).toISOString().slice(0, 16)
-    : undefined,
+  completedAt: formatDateTimeLocal(task?.completedAt),
 });
 
 export default function TaskFormModal({

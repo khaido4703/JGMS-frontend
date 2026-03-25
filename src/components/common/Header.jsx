@@ -58,9 +58,6 @@ const Header = () => {
           <a href="#features" className="hover:text-slate-900 transition">
             Features
           </a>
-          <a href="#documentation" className="hover:text-slate-900 transition">
-            Documentation
-          </a>
         </nav>
 
         <div className="flex items-center gap-3">

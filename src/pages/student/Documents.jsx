@@ -1,49 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  DownloadOutlined,
-  EditOutlined,
-  EyeOutlined,
   FileTextOutlined,
-  RedoOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
 import {
   Button,
   Card,
   Col,
-  Descriptions,
   Empty,
-  Form,
   Grid,
-  Input,
-  Modal,
   Result,
   Row,
-  Select,
-  Space,
   Spin,
   Statistic,
-  Switch,
-  Table,
-  Tag,
   Typography,
 } from "antd";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
+import SrsDocumentDetailModal from "../../components/student/SrsDocumentDetailModal";
+import SrsDocumentFormModal from "../../components/student/SrsDocumentFormModal";
+import SrsDocumentsTable from "../../components/student/SrsDocumentsTable";
 import { StudentService } from "../../services/student.service";
 
-const { Paragraph, Text, Title } = Typography;
-const { TextArea } = Input;
+const { Text, Title } = Typography;
 
 const GREEN_BUTTON_STYLE = {
   backgroundColor: "#10b981",
   borderColor: "#10b981",
-};
-
-const STATUS_COLORS = {
-  draft: "default",
-  published: "success",
-  archived: "warning",
 };
 
 const formatDateTime = (value) => {
@@ -99,284 +82,6 @@ const triggerDownload = (blob, fileName) => {
   link.remove();
   URL.revokeObjectURL(url);
 };
-
-function MetadataFields({ includeStatus = false }) {
-  return (
-    <Row gutter={16}>
-      <Col xs={24} md={12}>
-        <Form.Item
-          label="Document Title"
-          name="documentTitle"
-          rules={[{ required: true, message: "Document title is required" }]}
-        >
-          <Input placeholder="Software Requirements Specification" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={24} md={12}>
-        <Form.Item
-          label="Version"
-          name="version"
-          rules={[{ required: true, message: "Version is required" }]}
-        >
-          <Input placeholder="1.0" />
-        </Form.Item>
-      </Col>
-
-      <Col span={24}>
-        <Form.Item label="Introduction" name="introduction">
-          <TextArea rows={3} placeholder="Document overview" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={24} md={12}>
-        <Form.Item label="Scope" name="scope">
-          <TextArea rows={3} placeholder="Project scope" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={24} md={12}>
-        <Form.Item label="Product Perspective" name="productPerspective">
-          <TextArea rows={3} placeholder="System context and perspective" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={24} md={12}>
-        <Form.Item label="User Classes" name="userClasses">
-          <TextArea rows={3} placeholder="Target user groups" />
-        </Form.Item>
-      </Col>
-
-      <Col xs={24} md={12}>
-        <Form.Item label="Operating Environment" name="operatingEnvironment">
-          <TextArea rows={3} placeholder="Platforms, browsers, OS..." />
-        </Form.Item>
-      </Col>
-
-      <Col span={24}>
-        <Form.Item
-          label="Assumptions and Dependencies"
-          name="assumptionsDependencies"
-        >
-          <TextArea rows={3} placeholder="Known dependencies and assumptions" />
-        </Form.Item>
-      </Col>
-
-      {includeStatus ? (
-        <Col xs={24} md={12}>
-          <Form.Item label="Status" name="status">
-            <Select
-              options={[
-                { value: "draft", label: "Draft" },
-                { value: "published", label: "Published" },
-                { value: "archived", label: "Archived" },
-              ]}
-            />
-          </Form.Item>
-        </Col>
-      ) : null}
-    </Row>
-  );
-}
-
-function FormModal({
-  open,
-  title,
-  okText,
-  saving = false,
-  initialValues,
-  requirementOptions = [],
-  includeRequirements = false,
-  includeStatus = false,
-  onCancel,
-  onSubmit,
-}) {
-  const screens = Grid.useBreakpoint();
-  const [form] = Form.useForm();
-
-  useEffect(() => {
-    if (!open) return;
-    form.resetFields();
-    form.setFieldsValue(initialValues);
-  }, [form, initialValues, open]);
-
-  const handleOk = async () => {
-    const values = await form.validateFields();
-    await onSubmit(values);
-  };
-
-  return (
-    <Modal
-      title={title}
-      open={open}
-      onCancel={onCancel}
-      onOk={handleOk}
-      okText={okText}
-      confirmLoading={saving}
-      destroyOnClose
-      centered
-      width={screens.md ? 920 : "calc(100vw - 24px)"}
-      styles={{
-        body: {
-          maxHeight: screens.md ? "72vh" : "76vh",
-          overflowY: "auto",
-          paddingRight: 8,
-        },
-      }}
-      okButtonProps={{
-        style: GREEN_BUTTON_STYLE,
-        className:
-          "text-white hover:!border-emerald-600 hover:!bg-emerald-600",
-      }}
-    >
-      <Form form={form} layout="vertical">
-        <MetadataFields includeStatus={includeStatus} />
-
-        {includeRequirements ? (
-          <Row gutter={16}>
-            <Col xs={24} md={16}>
-              <Form.Item
-                label="Requirements"
-                name="requirementIds"
-                rules={[
-                  {
-                    required: true,
-                    type: "array",
-                    min: 1,
-                    message: "Select at least one requirement",
-                  },
-                ]}
-              >
-                <Select
-                  mode="multiple"
-                  showSearch
-                  allowClear
-                  options={requirementOptions}
-                  placeholder="Choose included requirements"
-                  optionFilterProp="label"
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={8}>
-              <Form.Item
-                label="Import From Jira"
-                name="importFromJira"
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-        ) : null}
-      </Form>
-    </Modal>
-  );
-}
-
-function DetailModal({ open, loading = false, document, onCancel }) {
-  const requirementRows = Array.isArray(document?.requirements)
-    ? document.requirements.map((item) => ({
-        ...item,
-        key: item.requirementId,
-      }))
-    : [];
-
-  return (
-    <Modal
-      title={document?.documentTitle || "Document Detail"}
-      open={open}
-      onCancel={onCancel}
-      footer={null}
-      destroyOnClose
-      centered
-      width={1000}
-      styles={{
-        body: {
-          maxHeight: "76vh",
-          overflowY: "auto",
-          paddingRight: 8,
-        },
-      }}
-    >
-      {loading ? (
-        <div className="flex min-h-48 items-center justify-center">
-          <Spin tip="Loading document..." />
-        </div>
-      ) : (
-        <>
-          <Descriptions
-            bordered
-            size="small"
-            column={1}
-            items={[
-              { key: "title", label: "Title", children: document?.documentTitle || "-" },
-              { key: "version", label: "Version", children: document?.version || "-" },
-              {
-                key: "status",
-                label: "Status",
-                children: (
-                  <Tag color={STATUS_COLORS[String(document?.status).toLowerCase()] || "default"}>
-                    {document?.status || "-"}
-                  </Tag>
-                ),
-              },
-              { key: "intro", label: "Introduction", children: document?.introduction || "-" },
-              { key: "scope", label: "Scope", children: document?.scope || "-" },
-              { key: "product", label: "Product Perspective", children: document?.productPerspective || "-" },
-              { key: "users", label: "User Classes", children: document?.userClasses || "-" },
-              { key: "env", label: "Operating Environment", children: document?.operatingEnvironment || "-" },
-              { key: "assumptions", label: "Assumptions and Dependencies", children: document?.assumptionsDependencies || "-" },
-              { key: "generatedBy", label: "Generated By", children: document?.generatedByName || "-" },
-              { key: "generatedAt", label: "Generated At", children: formatDateTime(document?.generatedAt) },
-              { key: "updatedAt", label: "Updated At", children: formatDateTime(document?.updatedAt) },
-            ]}
-          />
-
-          <div className="mt-6">
-            <Title level={5}>Included Requirements</Title>
-            {requirementRows.length ? (
-              <Table
-                columns={[
-                  { title: "SECTION", dataIndex: "sectionNumber", key: "sectionNumber", width: 120 },
-                  { title: "REQ CODE", dataIndex: "requirementCode", key: "requirementCode", width: 140 },
-                  { title: "TITLE", dataIndex: "title", key: "title", width: 240 },
-                  { title: "TYPE", dataIndex: "requirementType", key: "requirementType", width: 150 },
-                  {
-                    title: "PRIORITY",
-                    dataIndex: "priority",
-                    key: "priority",
-                    width: 120,
-                    render: (value) => <Tag>{value || "-"}</Tag>,
-                  },
-                  {
-                    title: "DESCRIPTION",
-                    dataIndex: "description",
-                    key: "description",
-                    render: (value) => (
-                      <Paragraph className="!mb-0" ellipsis={{ rows: 2, expandable: true }}>
-                        {value || "-"}
-                      </Paragraph>
-                    ),
-                  },
-                ]}
-                dataSource={requirementRows}
-                rowKey="key"
-                pagination={false}
-                scroll={{ x: 1080 }}
-              />
-            ) : (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="This document does not include any requirements."
-              />
-            )}
-          </div>
-        </>
-      )}
-    </Modal>
-  );
-}
 
 export default function Documents() {
   const { user } = useAuth();
@@ -640,112 +345,6 @@ export default function Documents() {
     }
   };
 
-  const columns = [
-    {
-      title: "TITLE",
-      dataIndex: "documentTitle",
-      key: "documentTitle",
-      width: 260,
-      render: (value) => (
-        <span className="text-sm font-semibold text-slate-900">{value}</span>
-      ),
-    },
-    {
-      title: "VERSION",
-      dataIndex: "version",
-      key: "version",
-      width: 120,
-    },
-    {
-      title: "STATUS",
-      dataIndex: "status",
-      key: "status",
-      width: 140,
-      render: (value) => (
-        <Tag color={STATUS_COLORS[String(value).toLowerCase()] || "default"}>
-          {value}
-        </Tag>
-      ),
-    },
-    {
-      title: "REQUIREMENTS",
-      dataIndex: "requirementsCount",
-      key: "requirementsCount",
-      width: 140,
-    },
-    {
-      title: "GENERATED BY",
-      dataIndex: "generatedByName",
-      key: "generatedByName",
-      width: 180,
-    },
-    {
-      title: "GENERATED AT",
-      dataIndex: "generatedAtLabel",
-      key: "generatedAtLabel",
-      width: 180,
-    },
-    {
-      title: "UPDATED",
-      dataIndex: "updatedAtLabel",
-      key: "updatedAtLabel",
-      width: 180,
-    },
-    {
-      title: "ACTIONS",
-      key: "actions",
-      width: 360,
-      fixed: "right",
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => openDetail(record)}
-          >
-            View
-          </Button>
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setSelectedDocument(record);
-              setEditOpen(true);
-            }}
-            style={GREEN_BUTTON_STYLE}
-            className="text-white hover:!border-emerald-600 hover:!bg-emerald-600"
-          >
-            Edit
-          </Button>
-          <Button
-            size="small"
-            icon={<RedoOutlined />}
-            onClick={() => {
-              setSelectedDocument(record);
-              setRegenerateOpen(true);
-            }}
-          >
-            Regenerate
-          </Button>
-          <Button
-            size="small"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownloadHtml(record)}
-          >
-            HTML
-          </Button>
-          <Button
-            size="small"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownloadDoc(record)}
-          >
-            DOC
-          </Button>
-        </Space>
-      ),
-    },
-  ];
-
   if (groupLoading) {
     return (
       <div className="flex min-h-64 items-center justify-center p-8">
@@ -804,7 +403,8 @@ export default function Documents() {
               SRS Documents
             </Title>
             <Text type="secondary">
-              Generate, edit and download SRS documents for group {group.groupCode}.
+              Generate, edit and download SRS documents for group{" "}
+              {group.groupCode}.
             </Text>
           </div>
 
@@ -865,19 +465,25 @@ export default function Documents() {
         </Row>
 
         <Card className="rounded-3xl border border-slate-200 shadow-sm">
-          <Table
+          <SrsDocumentsTable
             loading={documentsLoading}
-            columns={columns}
-            dataSource={rows}
-            rowKey="key"
-            pagination={{ pageSize: 6, showSizeChanger: false }}
-            locale={{ emptyText: "No SRS documents found" }}
-            scroll={{ x: 1680 }}
+            rows={rows}
+            onView={openDetail}
+            onEdit={(record) => {
+              setSelectedDocument(record);
+              setEditOpen(true);
+            }}
+            onRegenerate={(record) => {
+              setSelectedDocument(record);
+              setRegenerateOpen(true);
+            }}
+            onDownloadHtml={handleDownloadHtml}
+            onDownloadDoc={handleDownloadDoc}
           />
         </Card>
       </div>
 
-      <FormModal
+      <SrsDocumentFormModal
         open={generateOpen}
         title="Generate SRS Document"
         okText="Generate"
@@ -900,7 +506,7 @@ export default function Documents() {
         onSubmit={handleGenerate}
       />
 
-      <FormModal
+      <SrsDocumentFormModal
         open={editOpen}
         title="Edit SRS Document"
         okText="Update"
@@ -921,7 +527,7 @@ export default function Documents() {
         onSubmit={handleUpdate}
       />
 
-      <FormModal
+      <SrsDocumentFormModal
         open={regenerateOpen}
         title="Regenerate SRS Document"
         okText="Regenerate"
@@ -948,7 +554,7 @@ export default function Documents() {
         onSubmit={handleRegenerate}
       />
 
-      <DetailModal
+      <SrsDocumentDetailModal
         open={detailOpen}
         loading={detailLoading}
         document={detailDocument}

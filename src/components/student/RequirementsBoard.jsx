@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Input, Select, Space, Table, Tag } from "antd";
+import { Button, Card, Input, Select, Space, Table, Tag, Tooltip } from "antd";
 import { toast } from "react-toastify";
 import { StudentService } from "../../services/student.service";
 import RequirementDeleteModal from "./RequirementDeleteModal";
@@ -100,6 +101,7 @@ export default function RequirementsBoard({ groupCode, isLeader = false }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
@@ -271,6 +273,34 @@ export default function RequirementsBoard({ groupCode, isLeader = false }) {
     }
   };
 
+  const handleImportFromJira = async () => {
+    if (!isLeader) {
+      toast.error("Only group leaders can import requirements from Jira");
+      return;
+    }
+
+    if (!groupCode) return;
+
+    try {
+      setImportLoading(true);
+      const response =
+        await StudentService.importGroupRequirementsFromJira(groupCode);
+      toast.success(
+        response?.data?.message ||
+          response?.message ||
+          "Requirements imported from Jira successfully",
+      );
+      await loadRequirements();
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to import requirements from Jira",
+      );
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const columns = [
     {
       title: "REQ CODE",
@@ -335,19 +365,13 @@ export default function RequirementsBoard({ groupCode, isLeader = false }) {
       key: "createdByName",
       width: 180,
     },
-    {
-      title: "UPDATED",
-      dataIndex: "updatedAtLabel",
-      key: "updatedAtLabel",
-      width: 180,
-    },
   ];
 
   if (isLeader) {
     columns.push({
       title: "ACTIONS",
       key: "actions",
-      width: 160,
+      width: 100,
       fixed: "right",
       render: (_, record) => (
         <Space size="small">
@@ -355,19 +379,14 @@ export default function RequirementsBoard({ groupCode, isLeader = false }) {
             size="small"
             icon={<EditOutlined />}
             onClick={() => openEditModal(record)}
-            style={GREEN_BUTTON_STYLE}
-            className="text-white hover:!border-emerald-600 hover:!bg-emerald-600"
-          >
-            Edit
-          </Button>
+            className="text-white"
+          />
           <Button
             size="small"
             danger
             icon={<DeleteOutlined />}
             onClick={() => openDeleteModal(record)}
-          >
-            Delete
-          </Button>
+          />
         </Space>
       ),
     });
@@ -398,15 +417,26 @@ export default function RequirementsBoard({ groupCode, isLeader = false }) {
           </div>
 
           {isLeader ? (
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={openCreateModal}
-              style={GREEN_BUTTON_STYLE}
-              className="ml-auto text-white hover:!border-emerald-600 hover:!bg-emerald-600"
-            >
-              New Requirement
-            </Button>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Tooltip title="Bulk-import synced Jira issues into requirements. Sync issues first to get the latest data.">
+                <Button
+                  icon={<DownloadOutlined />}
+                  loading={importLoading}
+                  onClick={handleImportFromJira}
+                >
+                  Import From Jira
+                </Button>
+              </Tooltip>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={openCreateModal}
+                style={GREEN_BUTTON_STYLE}
+                className="text-white hover:!border-emerald-600 hover:!bg-emerald-600"
+              >
+                New Requirement
+              </Button>
+            </div>
           ) : null}
         </div>
 

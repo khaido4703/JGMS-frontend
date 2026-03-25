@@ -75,9 +75,7 @@ export default function RequirementFormModal({
         const response = await StudentService.getGroupIssues(groupCode);
         const data = response?.data ?? [];
         const options = Array.isArray(data)
-          ? data
-              .filter((item) => item?.jiraIssueId)
-              .map(mapIssueOption)
+          ? data.filter((item) => item?.jiraIssueId).map(mapIssueOption)
           : [];
 
         const currentIssueId = Number(requirement?.jiraIssueId || 0);
@@ -106,7 +104,13 @@ export default function RequirementFormModal({
     };
 
     loadIssues();
-  }, [groupCode, open, requirement?.issueKey, requirement?.jiraIssueId, requirement?.title]);
+  }, [
+    groupCode,
+    open,
+    requirement?.issueKey,
+    requirement?.jiraIssueId,
+    requirement?.title,
+  ]);
 
   const handleOk = async () => {
     const values = await form.validateFields();
@@ -133,8 +137,7 @@ export default function RequirementFormModal({
       }}
       okButtonProps={{
         style: GREEN_BUTTON_STYLE,
-        className:
-          "text-white hover:!border-emerald-600 hover:!bg-emerald-600",
+        className: "text-white hover:!border-emerald-600 hover:!bg-emerald-600",
       }}
     >
       <Form form={form} layout="vertical">
@@ -151,7 +154,7 @@ export default function RequirementFormModal({
                   },
                 ]}
               >
-                <Input placeholder="REQ-001" />
+                <Input placeholder="REQ-P1-001" />
               </Form.Item>
             </Col>
           ) : null}
@@ -216,7 +219,10 @@ export default function RequirementFormModal({
               name="priority"
               rules={[{ required: true, message: "Priority is required" }]}
             >
-              <Select options={PRIORITY_OPTIONS} placeholder="Select priority" />
+              <Select
+                options={PRIORITY_OPTIONS}
+                placeholder="Select priority"
+              />
             </Form.Item>
           </Col>
 

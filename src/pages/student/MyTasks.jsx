@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Descriptions,
+  Card,
+  Empty,
+  Grid,
   Input,
   Modal,
+  Pagination,
+  Popover,
   Select,
   Space,
   Spin,
@@ -51,6 +55,10 @@ const PRIORITY_COLORS = {
   Low: "blue",
 };
 
+const TASK_STATUS_OPTIONS = STATUS_OPTIONS.filter(
+  (item) => item.value !== "All",
+);
+
 const STATUS_PAYLOAD_MAP = {
   "TO DO": "To Do",
   "IN PROGRESS": "In Progress",
@@ -69,11 +77,45 @@ const normalizeStatus = (status) => {
   return status || "-";
 };
 
+const normalizePriority = (priority) => {
+  const value = String(priority || "")
+    .trim()
+    .toLowerCase();
+
+  if (value === "high") return "High";
+  if (value === "medium") return "Medium";
+  if (value === "low") return "Low";
+  return priority || "-";
+};
+
+const parseDateValue = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+      const [year, month, day] = trimmedValue.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    const normalizedValue = trimmedValue.replace(
+      /\.(\d{3})\d+/,
+      ".$1",
+    );
+    const date = new Date(normalizedValue);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatDate = (value) => {
   if (!value) return "-";
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseDateValue(value);
+  if (!date) return value;
 
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -87,12 +129,14 @@ const mapTask = (task) => ({
   key: task.taskId,
   id: task.jiraIssueKey || `TASK-${task.taskId}`,
   title: task.title || "-",
-  priority: task.priority || "-",
+  priority: normalizePriority(task.priority),
   status: normalizeStatus(task.status),
   dueDateLabel: formatDate(task.dueDate),
 });
 
 export default function MyTasks() {
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const [tasks, setTasks] = useState([]);
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -200,6 +244,92 @@ export default function MyTasks() {
     [tasks, priorityFilter, statusFilter, searchTerm],
   );
 
+  const paginatedTasks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredTasks.slice(startIndex, startIndex + itemsPerPage);
+  }, [currentPage, filteredTasks, itemsPerPage]);
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredTasks.length / itemsPerPage),
+    );
+
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, filteredTasks.length, itemsPerPage]);
+
+  const renderHoverPopover = (title, content, node, placement = "top") => (
+    <Popover
+      title={title}
+      content={content}
+      trigger="hover"
+      placement={placement}
+    >
+      {node}
+    </Popover>
+  );
+
+  const renderTaskActions = (task, compact = false) => {
+    const popoverPlacement = compact ? "top" : "left";
+    const controls = (
+      <>
+        {renderHoverPopover(
+          "View",
+          "Open task details",
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => openTaskDetail(task.taskId)}
+            style={compact ? { width: "100%" } : undefined}
+          />,
+          popoverPlacement,
+        )}
+        {renderHoverPopover(
+          "Complete",
+          task.status === "DONE"
+            ? "This task is already completed"
+            : "Mark this task as completed",
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            disabled={task.status === "DONE"}
+            loading={actionTaskId === task.taskId}
+            onClick={() => handleCompleteTask(task.taskId)}
+            style={compact ? { width: "100%" } : undefined}
+          />,
+          popoverPlacement,
+        )}
+        <Select
+          value={task.status}
+          onChange={(value) => handleUpdateStatus(task, value)}
+          options={TASK_STATUS_OPTIONS}
+          style={{ width: compact ? "100%" : 150 }}
+          loading={actionTaskId === task.taskId}
+        />
+      </>
+    );
+
+    if (!compact) {
+      return (
+        <Space wrap size="small">
+          {controls}
+        </Space>
+      );
+    }
+
+    return <div className="flex flex-col gap-2">{controls}</div>;
+  };
+
+  const renderDetailItem = (label, value) => (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </div>
+      <div className="text-sm font-medium text-slate-700">{value}</div>
+    </div>
+  );
+
   const columns = [
     {
       title: "TASK ID",
@@ -251,39 +381,14 @@ export default function MyTasks() {
       title: "ACTIONS",
       key: "actions",
       width: 300,
-      render: (_, record) => (
-        <Space wrap size="small">
-          <Button
-            icon={<EyeOutlined />}
-            onClick={() => openTaskDetail(record.taskId)}
-          >
-            View
-          </Button>
-          <Select
-            value={record.status}
-            onChange={(value) => handleUpdateStatus(record, value)}
-            options={STATUS_OPTIONS.filter((item) => item.value !== "All")}
-            style={{ width: 150 }}
-            loading={actionTaskId === record.taskId}
-          />
-          <Button
-            type="primary"
-            icon={<CheckCircleOutlined />}
-            disabled={record.status === "DONE"}
-            loading={actionTaskId === record.taskId}
-            onClick={() => handleCompleteTask(record.taskId)}
-          >
-            Complete
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => renderTaskActions(record),
     },
   ];
 
   return (
     <div className="p-4 md:p-2 xl:p-4">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-stretch gap-3">
+        <div className="flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           <label className="text-sm font-medium text-slate-700">
             Priority:
           </label>
@@ -293,12 +398,12 @@ export default function MyTasks() {
               setPriorityFilter(value);
               setCurrentPage(1);
             }}
-            style={{ width: 140 }}
+            style={{ width: isMobile ? "100%" : 140 }}
             options={PRIORITY_OPTIONS}
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           <label className="text-sm font-medium text-slate-700">Status:</label>
           <Select
             value={statusFilter}
@@ -306,7 +411,7 @@ export default function MyTasks() {
               setStatusFilter(value);
               setCurrentPage(1);
             }}
-            style={{ width: 160 }}
+            style={{ width: isMobile ? "100%" : 160 }}
             options={STATUS_OPTIONS}
           />
         </div>
@@ -319,57 +424,127 @@ export default function MyTasks() {
             setSearchTerm(e.target.value);
             setCurrentPage(1);
           }}
-          style={{ maxWidth: 280 }}
+          style={{ width: isMobile ? "100%" : 280 }}
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
-        <Table
-          loading={loading}
-          columns={columns}
-          dataSource={filteredTasks}
-          rowKey="taskId"
-          pagination={{
-            current: currentPage,
-            pageSize: itemsPerPage,
-            total: filteredTasks.length,
-            onChange: (page) => setCurrentPage(page),
-            showSizeChanger: false,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} tasks`,
-            style: { padding: "12px 16px" },
-          }}
-          bordered={false}
-          size="middle"
-          locale={{
-            emptyText: loading ? <Spin size="small" /> : "No tasks found",
-          }}
-          rowClassName={(_, index) =>
-            index % 2 === 0 ? "bg-white" : "bg-slate-50"
-          }
-          components={{
-            header: {
-              cell: ({ children, ...props }) => (
-                <th
-                  {...props}
-                  style={{
-                    ...props.style,
-                    background: "#f1f5f9",
-                    color: "#475569",
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    borderBottom: "2px solid #e2e8f0",
-                  }}
+      {isMobile ? (
+        <div className="space-y-3">
+          {loading ? (
+            <div className="flex min-h-52 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-md">
+              <Spin />
+            </div>
+          ) : paginatedTasks.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white py-12 shadow-md">
+              <Empty description="No tasks found" />
+            </div>
+          ) : (
+            <>
+              {paginatedTasks.map((task) => (
+                <Card
+                  key={task.taskId}
+                  className="rounded-2xl border border-slate-200 shadow-sm"
                 >
-                  {children}
-                </th>
-              ),
-            },
-          }}
-        />
-      </div>
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-mono text-xs font-bold text-slate-400">
+                          {task.id}
+                        </div>
+                        <h3 className="mt-1 text-base font-semibold text-slate-900">
+                          {task.title}
+                        </h3>
+                      </div>
+                      <Tag color={PRIORITY_COLORS[task.priority] || "default"}>
+                        {task.priority}
+                      </Tag>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <div className="text-slate-400">Status</div>
+                        <div className="mt-1">
+                          <Tag color={STATUS_COLORS[task.status] || "default"}>
+                            {STATUS_LABELS[task.status] || task.status}
+                          </Tag>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-slate-400">Due date</div>
+                        <div className="mt-1 font-medium text-slate-700">
+                          {task.dueDateLabel}
+                        </div>
+                      </div>
+                    </div>
+
+                    {renderTaskActions(task, true)}
+                  </div>
+                </Card>
+              ))}
+
+              <div className="flex justify-center rounded-xl border border-slate-200 bg-white px-3 py-4 shadow-sm">
+                <Pagination
+                  current={currentPage}
+                  pageSize={itemsPerPage}
+                  total={filteredTasks.length}
+                  onChange={(page) => setCurrentPage(page)}
+                  showSizeChanger={false}
+                  size="small"
+                />
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
+          <Table
+            loading={loading}
+            columns={columns}
+            dataSource={filteredTasks}
+            rowKey="taskId"
+            pagination={{
+              current: currentPage,
+              pageSize: itemsPerPage,
+              total: filteredTasks.length,
+              onChange: (page) => setCurrentPage(page),
+              showSizeChanger: false,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} tasks`,
+              style: { padding: "12px 16px" },
+            }}
+            bordered={false}
+            size="middle"
+            locale={{
+              emptyText: loading ? <Spin size="small" /> : "No tasks found",
+            }}
+            rowClassName={(_, index) =>
+              index % 2 === 0 ? "bg-white" : "bg-slate-50"
+            }
+            components={{
+              header: {
+                cell: ({ children, ...props }) => (
+                  <th
+                    {...props}
+                    style={{
+                      ...props.style,
+                      background: "#f1f5f9",
+                      color: "#475569",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      borderBottom: "2px solid #e2e8f0",
+                    }}
+                  >
+                    {children}
+                  </th>
+                ),
+              },
+            }}
+            scroll={{ x: 1060 }}
+          />
+        </div>
+      )}
 
       <Modal
         title="Task Details"
@@ -379,7 +554,15 @@ export default function MyTasks() {
           setSelectedTask(null);
         }}
         footer={null}
-        width={820}
+        width={isMobile ? "calc(100vw - 24px)" : 820}
+        centered
+        styles={{
+          body: {
+            maxHeight: isMobile ? "74vh" : "70vh",
+            overflowY: "auto",
+            paddingRight: 8,
+          },
+        }}
       >
         {detailLoading ? (
           <div className="flex min-h-40 items-center justify-center">
@@ -387,77 +570,133 @@ export default function MyTasks() {
           </div>
         ) : selectedTask ? (
           <Space direction="vertical" size={16} style={{ width: "100%" }}>
-            <Descriptions bordered column={2} size="middle">
-              <Descriptions.Item label="Task ID">
-                {selectedTask.taskId}
-              </Descriptions.Item>
-              <Descriptions.Item label="Jira Key">
-                {selectedTask.jiraIssueKey || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Title" span={2}>
-                {selectedTask.title}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag color={STATUS_COLORS[selectedTask.status] || "default"}>
-                  {STATUS_LABELS[selectedTask.status] || selectedTask.status}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Priority">
-                <Tag
-                  color={PRIORITY_COLORS[selectedTask.priority] || "default"}
-                >
-                  {selectedTask.priority}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Due Date">
-                {formatDate(selectedTask.dueDate)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Completed At">
-                {formatDate(selectedTask.completedAt)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Assigned To">
-                {selectedTask.assignedToName || selectedTask.assignedTo || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Requirement ID">
-                {selectedTask.requirementId ?? "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Jira Issue ID">
-                {selectedTask.jiraIssueId ?? "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Jira Status">
-                {selectedTask.jiraStatus || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Created At">
-                {formatDate(selectedTask.createdAt)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Updated At">
-                {formatDate(selectedTask.updatedAt)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Description" span={2}>
-                <Typography.Paragraph style={{ marginBottom: 0 }}>
-                  {selectedTask.description || "-"}
-                </Typography.Paragraph>
-              </Descriptions.Item>
-            </Descriptions>
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-5 py-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                      {selectedTask.id}
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {selectedTask.title}
+                    </h3>
+                  </div>
 
-            <Space wrap>
-              <Select
-                value={selectedTask.status}
-                onChange={(value) => handleUpdateStatus(selectedTask, value)}
-                options={STATUS_OPTIONS.filter((item) => item.value !== "All")}
-                style={{ width: 180 }}
-                loading={actionTaskId === selectedTask.taskId}
-              />
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                disabled={selectedTask.status === "DONE"}
-                loading={actionTaskId === selectedTask.taskId}
-                onClick={() => handleCompleteTask(selectedTask.taskId)}
-              >
-                Mark Complete
-              </Button>
-            </Space>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Tag
+                      color={STATUS_COLORS[selectedTask.status] || "default"}
+                      style={{ marginInlineEnd: 0 }}
+                    >
+                      {STATUS_LABELS[selectedTask.status] ||
+                        selectedTask.status}
+                    </Tag>
+                    <Tag
+                      color={
+                        PRIORITY_COLORS[selectedTask.priority] || "default"
+                      }
+                      style={{ marginInlineEnd: 0 }}
+                    >
+                      {selectedTask.priority}
+                    </Tag>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5 p-5">
+                <div>
+                  <div className="mb-3 text-sm font-semibold text-slate-900">
+                    Overview
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {renderDetailItem("Task ID", selectedTask.taskId)}
+                    {renderDetailItem(
+                      "Jira Key",
+                      selectedTask.jiraIssueKey || "-",
+                    )}
+                    {renderDetailItem(
+                      "Assigned To",
+                      selectedTask.assignedToName ||
+                        selectedTask.assignedTo ||
+                        "-",
+                    )}
+                    {renderDetailItem(
+                      "Requirement ID",
+                      selectedTask.requirementId ?? "-",
+                    )}
+                    {renderDetailItem(
+                      "Due Date",
+                      formatDate(selectedTask.dueDate),
+                    )}
+                    {renderDetailItem(
+                      "Completed At",
+                      formatDate(selectedTask.completedAt),
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3 text-sm font-semibold text-slate-900">
+                    Jira & Timeline
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {renderDetailItem(
+                      "Jira Issue ID",
+                      selectedTask.jiraIssueId ?? "-",
+                    )}
+                    {renderDetailItem(
+                      "Jira Status",
+                      selectedTask.jiraStatus || "-",
+                    )}
+                    {renderDetailItem(
+                      "Created At",
+                      formatDate(selectedTask.createdAt),
+                    )}
+                    {renderDetailItem(
+                      "Updated At",
+                      formatDate(selectedTask.updatedAt),
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3 text-sm font-semibold text-slate-900">
+                    Description
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <Typography.Paragraph
+                      style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}
+                    >
+                      {selectedTask.description || "-"}
+                    </Typography.Paragraph>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="mb-3 text-sm font-semibold text-slate-900">
+                Quick Actions
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Select
+                  value={selectedTask.status}
+                  onChange={(value) => handleUpdateStatus(selectedTask, value)}
+                  options={TASK_STATUS_OPTIONS}
+                  style={{ width: isMobile ? "100%" : 180 }}
+                  loading={actionTaskId === selectedTask.taskId}
+                />
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  disabled={selectedTask.status === "DONE"}
+                  loading={actionTaskId === selectedTask.taskId}
+                  onClick={() => handleCompleteTask(selectedTask.taskId)}
+                  style={isMobile ? { width: "100%" } : undefined}
+                >
+                  Mark Complete
+                </Button>
+              </div>
+            </div>
           </Space>
         ) : null}
       </Modal>

@@ -1,8 +1,12 @@
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import "./Topbar.css";
 
-export default function Topbar() {
+export default function Topbar({
+  isSidebarCollapsed = false,
+  onSidebarToggle = () => {},
+}) {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -27,10 +31,17 @@ export default function Topbar() {
 
   return (
     <div className="topbar">
-      <input
-        className="topbar-search"
-        placeholder="Search groups, students, or lecturers..."
-      />
+      <button
+        type="button"
+        className="topbar-sidebar-toggle"
+        onClick={onSidebarToggle}
+        aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-expanded={!isSidebarCollapsed}
+      >
+        <span className="topbar-sidebar-toggle__icon" aria-hidden="true">
+          {isSidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        </span>
+      </button>
 
       <div className="topbar-user" ref={menuRef}>
         <div className="user-trigger" onClick={() => setOpen(!open)}>

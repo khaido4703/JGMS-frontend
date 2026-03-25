@@ -162,6 +162,13 @@ export const StudentService = {
     });
   },
 
+  importGroupRequirementsFromJira(groupCode) {
+    return BaseService.post({
+      url: `${API.STUDENT.GROUP_REQUIREMENTS}/${groupCode}/requirements/import-from-jira`,
+      isLoading: true,
+    });
+  },
+
   updateGroupRequirement(groupCode, requirementId, payload) {
     return BaseService.put({
       url: `${API.STUDENT.GROUP_REQUIREMENTS}/${groupCode}/requirements/${requirementId}`,
@@ -180,6 +187,13 @@ export const StudentService = {
   getGroupProgressReports(groupCode) {
     return BaseService.get({
       url: `${API.STUDENT.GROUP_PROGRESS_REPORTS}/${groupCode}/progress-reports`,
+      isLoading: true,
+    });
+  },
+
+  getGroupProgressReportTemplate(groupCode) {
+    return BaseService.get({
+      url: `${API.STUDENT.GROUP_PROGRESS_REPORTS}/${groupCode}/progress-reports/template`,
       isLoading: true,
     });
   },
