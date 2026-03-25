@@ -16,5 +16,13 @@ export const AuthService = {
       payload: { email, password, fullName, phone, studentCode },
       isLoading: true,
     });
-  }
+  },
+
+  registerLecturer({ email, password, fullName, phone } = {}) {
+    return BaseService.post({
+      url: API.AUTH.REGISTER_LECTURER,
+      payload: { email, password, fullName, phone },
+      isLoading: true,
+    });
+  },
 };

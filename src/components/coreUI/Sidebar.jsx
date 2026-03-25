@@ -19,7 +19,7 @@ export default function Sidebar() {
         return (
           <>
             <NavLink to="/admin" end>
-              Dashboard
+              Project
             </NavLink>
             <NavLink to="/admin/groups">Manage Groups</NavLink>
             <NavLink to="/admin/lectures">Manage Lectures</NavLink>
@@ -32,15 +32,15 @@ export default function Sidebar() {
             Dashboard
           </NavLink>
 
-          <NavLink to="/profile">
+          <NavLink to="profile">
             Profile
           </NavLink>
 
-          <NavLink to="/lecturer/reports">
+          <NavLink to="reports">
             Progress Reports
           </NavLink>
 
-          <NavLink to="/lecturer/github">
+          <NavLink to="github">
             GitHub Reports
           </NavLink>
         </>
@@ -56,7 +56,6 @@ export default function Sidebar() {
               Profile
             </NavLink>
             <NavLink to="/student/tasks">My Tasks</NavLink>
-            <NavLink to="/student/assignments">Assignments</NavLink>
           </>
         );
       default:

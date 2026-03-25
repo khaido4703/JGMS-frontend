@@ -5,7 +5,7 @@ export const ROUTER_URL = {
     REGISTER: "/register",
   },
   ADMIN: {
-    DASHBOARD: "/admin",
+    PROJECT: "/admin",
     MANAGE_GROUP: "/admin/groups",
     MANAGE_LECTURE: "/admin/lectures",
   },

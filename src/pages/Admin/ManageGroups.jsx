@@ -168,10 +168,21 @@ export default function ManageGroups() {
         );
 
         if (newMemberIds.length > 0) {
+          const currentMembers = groupMembers[editingGroup.groupCode] || [];
+          const currentIds = currentMembers.map(m => m.userId); 
+
+          const validIds = newMemberIds
+            .map(Number)
+            .filter(id => !isNaN(id) && !currentIds.includes(id));
+
+          console.log("Add members:", validIds);
+
+          if (validIds.length === 0) return;
+
           await AdminGroupService.addMembers(
             editingGroup.groupCode,
             {
-              studentIdentifiers: newMemberIds.map(Number)
+              studentIdentifiers: validIds.map(String)
             }
           );
         }
@@ -250,6 +261,10 @@ export default function ManageGroups() {
       console.error(err);
     }
   };
+
+  const normalizeUser = (user) => ({
+  userId: user.userId,
+  name: user.fullName || user.userName});
 
   return (
     <>
@@ -365,6 +380,7 @@ export default function ManageGroups() {
 
                                       toast.success("Member removed!");
                                       handleExpand(group.groupCode);
+                                      fetchGroups();
                                       fetchAvailableStudents();
                                     }}
                                   >
@@ -428,14 +444,17 @@ export default function ManageGroups() {
             onChange={handleLeaderChange}
           >
             <option value="">Select Leader</option>
-            {(editingGroup
+
+            {(editingGroup 
               ? groupMembers[editingGroup.groupCode] || []
               : availableStudents
-            ).map(s => (
-              <option key={s.userId} value={s.userId}>
-                {s.fullName}
-              </option>
-            ))}
+            )
+              .map(normalizeUser)
+              .map(s => (
+                <option key={s.userId} value={s.userId}>
+                  {s.name}
+                </option>
+              ))}
           </select>
 
           {!editingGroup && (
@@ -454,9 +473,9 @@ export default function ManageGroups() {
                 });
               }}
             >
-              {availableStudents.map(s => (
-                <option key={s.userId} value={s.userId}>
-                  {s.fullName}
+              {availableStudents.map(normalizeUser).map(u => (
+                <option key={u.userId} value={u.userId}>
+                  {u.name}
                 </option>
               ))}
             </select>
@@ -475,10 +494,13 @@ export default function ManageGroups() {
                 setNewMemberIds(values);
               }}
             >
-              {availableStudents.map(s => (
-                <option key={s.userId} value={s.userId}>
-                  {s.fullName}
-                </option>
+              {availableStudents
+                .filter(s => s.userId !== Number(formData.leaderId))
+                .map(normalizeUser)
+                .map(u => (
+                  <option key={u.userId} value={u.userId}>
+                    {u.name}
+                  </option>
               ))}
             </select>
           )}

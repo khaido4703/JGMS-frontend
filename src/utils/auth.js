@@ -74,7 +74,7 @@ export const getUserRole = (user) => {
 export const getDashboardPathByRole = (role) => {
   switch (normalizeRole(role)) {
     case ROLE.ADMIN:
-      return ROUTER_URL.ADMIN.DASHBOARD;
+      return ROUTER_URL.ADMIN.PROJECT;
     case ROLE.LECTURER:
       return ROUTER_URL.LECTURER.DASHBOARD;
     case ROLE.STUDENT:

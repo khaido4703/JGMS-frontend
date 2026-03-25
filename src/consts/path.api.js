@@ -6,6 +6,7 @@ export const API = {
     LOGIN: "/api/auth/login",
     LOGIN_EMAIL: "/api/auth/login/email",
     REGISTER: "/api/auth/register",
+    REGISTER_LECTURER: "/api/auth/register/lecturer",
     ME: "/api/auth/me",
   },
   ADMIN: {

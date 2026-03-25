@@ -3,7 +3,7 @@ import { ROUTER_URL } from "../consts/router.const";
 import { ROLE } from "../consts/const";
 import AdminLayout from "../layouts/AdminLayout";
 import MainLayout from "../layouts/MainLayout";
-import Dashboard from "../pages/Admin/Dashboard";
+import Project from "../pages/Admin/Project";
 import ManageGroups from "../pages/Admin/ManageGroups";
 import ManageLectures from "../pages/Admin/ManageLecture";
 import StudentDashboard from "../pages/student/Dashboard";
@@ -33,10 +33,10 @@ const AppRoutes = () =>
       element: <ProtectedRoute allowedRoles={[ROLE.ADMIN]} />,
       children: [
         {
-          path: ROUTER_URL.ADMIN.DASHBOARD,
+          path: ROUTER_URL.ADMIN.PROJECT,
           element: <AdminLayout />,
           children: [
-            { index: true, element: <Dashboard /> },
+            { index: true, element: <Project /> },
             { path: "groups", element: <ManageGroups /> },
             { path: "lectures", element: <ManageLectures /> },
           ],

@@ -12,6 +12,8 @@ const RegisterPage = () => {
     fullName: "",
     phone: "",
     studentCode: "",
+    role: "student",
+
   });
   const [errors, setErrors] = useState({});
 
@@ -28,7 +30,24 @@ const RegisterPage = () => {
     setErrors({});
 
     try {
-      const response = await AuthService.register(form);
+      let response;
+
+      if (form.role === "lecturer") {
+        response = await AuthService.registerLecturer({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          phone: form.phone,
+        });
+      } else {
+        response = await AuthService.register({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          phone: form.phone,
+          studentCode: form.studentCode,
+        });
+      }
 
       if (response?.data) {
         toast.success("Registration successful! Please login.");
@@ -102,6 +121,20 @@ const RegisterPage = () => {
                 >
                   Full name
                 </label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    value={form.role}
+                    onChange={handleChange}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3"
+                  >
+                    <option value="student">Student</option>
+                    <option value="lecturer">Lecturer</option>
+                  </select>
+                </div>
                 <input
                   className={`w-full rounded-xl border ${errors.fullName ? "border-red-400" : "border-slate-200"} bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30`}
                   id="fullName"
@@ -179,29 +212,25 @@ const RegisterPage = () => {
                   <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="studentCode"
-                >
-                  Student Code
-                </label>
-                <input
-                  className={`w-full rounded-xl border ${errors.studentCode ? "border-red-400" : "border-slate-200"} bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30`}
-                  id="studentCode"
-                  name="studentCode"
-                  onChange={handleChange}
-                  placeholder="SE123456"
-                  type="text"
-                  value={form.studentCode}
-                  required
-                />
-                {errors.studentCode && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.studentCode}
-                  </p>
-                )}
-              </div>
+              {form.role === "student" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Student Code
+                  </label>
+                  <input
+                    className={`w-full rounded-xl border ${
+                      errors.studentCode ? "border-red-400" : "border-slate-200"
+                    } px-4 py-3`}
+                    name="studentCode"
+                    onChange={handleChange}
+                    value={form.studentCode}
+                    required
+                  />
+                  {errors.studentCode && (
+                    <p className="text-xs text-red-500">{errors.studentCode}</p>
+                  )}
+                </div>
+              )}
               <button
                 className="w-full rounded-xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:ring-offset-2 focus:ring-offset-white"
                 type="submit"

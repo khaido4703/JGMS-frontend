@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { ROUTER_URL } from "../consts/router.const";
 import { getDashboardPathByRole, normalizeRole } from "../utils/auth";
+import { getUserRole } from "../utils/auth";
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const location = useLocation();
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
     );
   }
 
-  const userRole = normalizeRole(user.role);
+  const userRole = getUserRole(user);
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     return <Navigate replace to={getDashboardPathByRole(userRole)} />;
