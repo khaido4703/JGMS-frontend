@@ -74,7 +74,9 @@ export default function Topbar({
             <div className="p-2 text-gray-400">No results</div>
           )}
 
-          {results.map((u) => (
+          {results
+          .filter((u) => u)
+          .map((u) => (
             <div
               key={u.id}
               className="search-item"
@@ -83,9 +85,16 @@ export default function Topbar({
                 setQuery("");
               }}
             >
-              <div>{u.email}</div>
-              <div className="text-xs text-gray-400">
-                {u.role}
+              <div>
+                <div className="text-gray-400">Email</div>
+                <div className="font-medium">
+                  {u.email}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-gray-400">User ID</div>
+                <div>{u.id}</div>
               </div>
             </div>
           ))}
@@ -129,20 +138,30 @@ export default function Topbar({
           <div className="bg-white w-[400px] rounded-xl shadow-xl p-6 border pointer-events-auto">
 
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
-                User Detail
-              </h2>
-
-              <button onClick={() => setSelectedUser(null)}>
-                ✕
-              </button>
+              <h2 className="text-lg font-semibold">User Detail</h2>
+              <button onClick={() => setSelectedUser(null)}>✕</button>
             </div>
 
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
+
+              <div>
+                <div className="text-gray-400">Name</div>
+                <div className="font-medium">
+                  {selectedUser.fullName || selectedUser.name || "N/A"}
+                </div>
+              </div>
+
               <div>
                 <div className="text-gray-400">Email</div>
                 <div className="font-medium">
                   {selectedUser.email}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-gray-400">Phone</div>
+                <div className="font-medium">
+                  {selectedUser.phoneNumber || selectedUser.phone || "N/A"}
                 </div>
               </div>
 
@@ -155,16 +174,17 @@ export default function Topbar({
 
               <div>
                 <div className="text-gray-400">User ID</div>
-                <div>{selectedUser.id}</div>
+                <div>{selectedUser.userId}</div>
               </div>
+
             </div>
 
-            <div className="mt-5 flex gap-2">
-              <button className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg">
-                View Profile
-              </button>
-
-              <button className="flex-1 bg-gray-100 py-2 rounded-lg">
+            {/* FOOTER */}
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
+              >
                 Close
               </button>
             </div>

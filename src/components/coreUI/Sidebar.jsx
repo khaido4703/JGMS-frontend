@@ -1,6 +1,7 @@
 import {
   AppstoreOutlined,
   CheckSquareOutlined,
+  ProjectOutlined,
   DashboardOutlined,
   FileTextOutlined,
   FolderOpenOutlined,
@@ -114,9 +115,9 @@ export default function Sidebar({ isCollapsed = false }) {
       case "admin":
         return [
           {
-            to: ROUTER_URL.ADMIN.DASHBOARD,
-            label: "Dashboard",
-            icon: <DashboardOutlined />,
+            to: ROUTER_URL.ADMIN.PROJECT,
+            label: "Project",
+            icon: <ProjectOutlined />,
             end: true,
           },
           {

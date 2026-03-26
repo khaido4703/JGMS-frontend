@@ -28,10 +28,10 @@ export default function ManageLectures() {
   return (
     <>
       <div className="page-header">
-        <h1>Manage Lecturers</h1>
-        <button className="btn-primary" onClick={() => setOpen(true)}>
+        {/* <h1>Manage Lecturers</h1> */}
+        {/* <button className="btn-primary" onClick={() => setOpen(true)}>
           + Add Lecturer
-        </button>
+        </button> */}
       </div>
 
         <table>
@@ -41,8 +41,8 @@ export default function ManageLectures() {
               <th>LECTURER NAME</th>
               <th>EMAIL</th>
               <th>PHONE</th>
-              <th>GROUPS</th>
-              <th>ACTION</th>
+              {/* <th>GROUPS</th> */}
+              {/* <th>ACTION</th> */}
             </tr>
           </thead>
 
@@ -53,8 +53,8 @@ export default function ManageLectures() {
                 <td>{lec.fullName}</td>
                 <td>{lec.email}</td>
                 <td>{lec.phone}</td>
-                <td>-</td>
-                <td>
+                {/* <td>-</td> */}
+                {/* <td>
                   <div className="action-buttons">
                   <button
                     className="btn-edit"
@@ -70,7 +70,7 @@ export default function ManageLectures() {
                     Delete
                   </button>
                 </div>
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>
