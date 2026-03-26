@@ -32,4 +32,11 @@ export const AdminProjectService = {
       url: `/api/admin/groups/${groupCode}/project`,
     });
   },
+
+  connectGithub(groupCode, payload) {
+    return BaseService.post({
+      url: `/api/admin/groups/${groupCode}/project/integrations/github`,
+      payload,
+    });
+  },
 };

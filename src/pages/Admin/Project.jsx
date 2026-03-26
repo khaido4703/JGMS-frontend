@@ -9,6 +9,14 @@ export default function Project() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [githubModal, setGithubModal] = useState(false);
+  const [githubData, setGithubData] = useState({
+    apiToken: "",
+    repoOwner: "",
+    repoName: "",
+    repoUrl: "",
+    groupCode: "",
+  });
 
   useEffect(() => {
     fetchData();
@@ -96,6 +104,26 @@ export default function Project() {
     } catch (err) {
       console.error(err);
       alert("Delete failed!");
+    }
+  };
+
+  const handleConnectGithub = async () => {
+    try {
+      await AdminProjectService.connectGithub(
+        githubData.groupCode,
+        {
+          apiToken: githubData.apiToken,
+          repoOwner: githubData.repoOwner,
+          repoName: githubData.repoName,
+          repoUrl: githubData.repoUrl,
+        }
+      );
+
+      alert("Connected successfully!");
+      setGithubModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Connect failed!");
     }
   };
 
@@ -188,6 +216,20 @@ export default function Project() {
                         >
                           Delete
                         </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGithubData((prev) => ({
+                              ...prev,
+                              groupCode: group.groupCode,
+                            }));
+                            setGithubModal(true);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-black text-white hover:bg-gray-800 text-sm font-medium flex items-center gap-1"
+                        >
+                          GitHub
+                        </button>
                       </>
                     )}
                   </td>
@@ -273,6 +315,76 @@ export default function Project() {
           </div>
         </div>
       )}
+
+      {githubModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+
+          <div className="bg-white w-[420px] p-6 rounded-xl shadow-xl">
+
+            <h2 className="text-lg font-semibold mb-4">
+              Connect GitHub
+            </h2>
+
+            <div className="space-y-3">
+
+              <input
+                placeholder="GitHub Token"
+                value={githubData.apiToken}
+                onChange={(e) =>
+                  setGithubData({ ...githubData, apiToken: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                placeholder="Repo Owner (username/org)"
+                value={githubData.repoOwner}
+                onChange={(e) =>
+                  setGithubData({ ...githubData, repoOwner: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                placeholder="Repo Name"
+                value={githubData.repoName}
+                onChange={(e) =>
+                  setGithubData({ ...githubData, repoName: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                placeholder="Repo URL"
+                value={githubData.repoUrl}
+                onChange={(e) =>
+                  setGithubData({ ...githubData, repoUrl: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setGithubModal(false)}
+                className="px-4 py-2 bg-gray-100 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConnectGithub}
+                className="px-4 py-2 bg-green-500 text-white rounded"
+              >
+                Connect
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {selectedProject && (
         <div className="fixed top-0 right-0 h-full w-[400px] bg-white shadow-xl z-50 p-6 border-l">
           <div className="flex justify-between items-center mb-4">
