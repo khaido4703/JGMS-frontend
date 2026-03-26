@@ -18,6 +18,9 @@ export const ROUTER_URL = {
   STUDENT: {
     DASHBOARD: "/student",
     KANBAN: "/student/kanban",
+    MY_GROUP: "/student/my-group",
     PROFILE: "/student/profile",
+    REPORTS: "/student/reports",
+    DOCUMENTS: "/student/documents",
   },
 };

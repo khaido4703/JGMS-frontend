@@ -455,7 +455,7 @@ export default function KanbanBoard() {
           </div>
 
           {/* Complete Sprint button */}
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm">
+          <button className="ml-auto rounded bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">
             Complete sprint
           </button>
         </div>

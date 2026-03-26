@@ -7,9 +7,12 @@ import Project from "../pages/Admin/Project";
 import ManageGroups from "../pages/Admin/ManageGroups";
 import ManageLectures from "../pages/Admin/ManageLecture";
 import StudentDashboard from "../pages/student/Dashboard";
+import StudentMyGroup from "../pages/student/MyGroup";
 import StudentProfile from "../pages/student/Profile";
 import MyTasks from "../pages/student/MyTasks";
 import KanbanPage from "../pages/student/KanbanPage";
+import StudentProgressReports from "../pages/student/ProgressReports";
+import StudentDocuments from "../pages/student/Documents";
 import ProgressReports from "../pages/lecturer/ProgressReports";
 import LecturerDashboard from "../pages/lecturer/Dashboard";
 import GithubReport from "../pages/lecturer/GithubReport";
@@ -71,12 +74,24 @@ const AppRoutes = () =>
             },
             { path: "profile", element: <StudentProfile /> },
             {
+              path: "my-group",
+              element: <StudentMyGroup />,
+            },
+            {
               path: "tasks",
               element: <MyTasks />,
             },
             {
               path: "kanban",
               element: <KanbanPage />,
+            },
+            {
+              path: "reports",
+              element: <StudentProgressReports />,
+            },
+            {
+              path: "documents",
+              element: <StudentDocuments />,
             },
           ],
         },

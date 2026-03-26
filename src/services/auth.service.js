@@ -9,8 +9,8 @@ export const AuthService = {
       isLoading: true,
     });
   },
-  
-  register({ email, password, fullName, phone, studentCode } = {}) {
+
+  registerStudent({ email, password, fullName, phone, studentCode } = {}) {
     return BaseService.post({
       url: API.AUTH.REGISTER,
       payload: { email, password, fullName, phone, studentCode },
@@ -24,5 +24,8 @@ export const AuthService = {
       payload: { email, password, fullName, phone },
       isLoading: true,
     });
+  },
+  register(payload = {}) {
+    return this.registerStudent(payload);
   },
 };
